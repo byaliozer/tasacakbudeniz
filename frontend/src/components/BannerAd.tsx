@@ -15,8 +15,9 @@ export function BannerAd({ style }: BannerAdProps) {
     // Only try to load native ads module on native platforms
     if (Platform.OS !== 'web') {
       try {
-        // Dynamic require at runtime
-        const adsModule = require('react-native-google-mobile-ads');
+        // Dynamic require at runtime using eval to prevent Metro bundling for web
+        // eslint-disable-next-line no-eval
+        const adsModule = eval("require('react-native-google-mobile-ads')");
         setNativeAd(() => adsModule.BannerAd);
         setAdSize(adsModule.BannerAdSize);
       } catch (e) {
