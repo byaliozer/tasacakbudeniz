@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
 import { ADMOB_CONFIG } from '../context/AdContext';
 
@@ -6,58 +6,67 @@ interface BannerAdProps {
   style?: object;
 }
 
-// Dynamic import for native banner ads
-let BannerAdComponent: any = null;
-let BannerAdSize: any = null;
-
-if (Platform.OS !== 'web') {
-  try {
-    const adsModule = require('react-native-google-mobile-ads');
-    BannerAdComponent = adsModule.BannerAd;
-    BannerAdSize = adsModule.BannerAdSize;
-    console.log('[BannerAd] Native module loaded');
-  } catch (error) {
-    console.log('[BannerAd] Native module not available');
-  }
-}
+// Native banner component - will be imported dynamically only on native
+let NativeBannerAd: React.ComponentType<any> | null = null;
 
 export function BannerAd({ style }: BannerAdProps) {
-  const [adError, setAdError] = useState(false);
-  const [adLoaded, setAdLoaded] = useState(false);
-
-  // Show native banner ad on mobile
-  if (Platform.OS !== 'web' && BannerAdComponent && BannerAdSize) {
+  // Always show placeholder on web
+  if (Platform.OS === 'web') {
     return (
-      <View style={[styles.container, style]}>
-        <BannerAdComponent
-          unitId={ADMOB_CONFIG.BANNER_ID}
-          size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
-          requestOptions={{
-            requestNonPersonalizedAdsOnly: true,
-          }}
-          onAdLoaded={() => {
-            console.log('[BannerAd] Ad loaded');
-            setAdLoaded(true);
-            setAdError(false);
-          }}
-          onAdFailedToLoad={(error: any) => {
-            console.warn('[BannerAd] Failed to load:', error);
-            setAdError(true);
-          }}
-        />
-        {adError && (
-          <View style={styles.placeholder}>
-            <Text style={styles.placeholderText}>📢 Reklam Alanı</Text>
-          </View>
-        )}
+      <View style={[styles.placeholder, style]}>
+        <Text style={styles.placeholderText}>📢 Reklam Alanı</Text>
       </View>
     );
   }
 
-  // Placeholder for web or when native module is not available
+  // On native, try to render real banner
+  return <NativeBanner style={style} />;
+}
+
+// Separate component for native banner to isolate the native-only import
+function NativeBanner({ style }: { style?: object }) {
+  const [AdComponent, setAdComponent] = React.useState<any>(null);
+  const [adSize, setAdSize] = React.useState<any>(null);
+  const [error, setError] = React.useState(false);
+
+  React.useEffect(() => {
+    // Only try to import on native platforms
+    if (Platform.OS !== 'web') {
+      try {
+        const adsModule = require('react-native-google-mobile-ads');
+        setAdComponent(() => adsModule.BannerAd);
+        setAdSize(adsModule.BannerAdSize);
+      } catch (e) {
+        console.log('[BannerAd] Native module not available:', e);
+        setError(true);
+      }
+    }
+  }, []);
+
+  if (error || !AdComponent || !adSize) {
+    return (
+      <View style={[styles.placeholder, style]}>
+        <Text style={styles.placeholderText}>📢 Reklam Alanı</Text>
+      </View>
+    );
+  }
+
   return (
-    <View style={[styles.placeholder, style]}>
-      <Text style={styles.placeholderText}>📢 Reklam Alanı</Text>
+    <View style={[styles.container, style]}>
+      <AdComponent
+        unitId={ADMOB_CONFIG.BANNER_ID}
+        size={adSize.ANCHORED_ADAPTIVE_BANNER}
+        requestOptions={{
+          requestNonPersonalizedAdsOnly: true,
+        }}
+        onAdLoaded={() => {
+          console.log('[BannerAd] Ad loaded');
+        }}
+        onAdFailedToLoad={(err: any) => {
+          console.warn('[BannerAd] Failed to load:', err);
+          setError(true);
+        }}
+      />
     </View>
   );
 }
