@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
-import { Audio } from 'expo-av';
 import { Platform } from 'react-native';
+import { Audio } from 'expo-av';
 
 interface SoundContextType {
   isMuted: boolean;
@@ -16,23 +16,15 @@ const SoundContext = createContext<SoundContextType | undefined>(undefined);
 
 export function SoundProvider({ children }: { children: React.ReactNode }) {
   const [isMuted, setIsMuted] = useState(false);
-  const [isAudioReady, setIsAudioReady] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+  const soundsRef = useRef<{ [key: string]: Audio.Sound | null }>({});
   
   // Web Audio API context (for web only)
   const audioContextRef = useRef<AudioContext | null>(null);
-  
-  // expo-av sound objects (for native)
-  const soundsRef = useRef<{
-    correct?: Audio.Sound;
-    wrong?: Audio.Sound;
-    bonus?: Audio.Sound;
-    tick?: Audio.Sound;
-    gameOver?: Audio.Sound;
-  }>({});
 
-  // Initialize audio on mount
+  // Initialize audio
   useEffect(() => {
-    const initAudio = async () => {
+    const init = async () => {
       if (Platform.OS !== 'web') {
         try {
           await Audio.setAudioModeAsync({
@@ -41,24 +33,19 @@ export function SoundProvider({ children }: { children: React.ReactNode }) {
             staysActiveInBackground: false,
             shouldDuckAndroid: true,
           });
-          setIsAudioReady(true);
-          console.log('[Sound] Audio initialized for native');
-        } catch (error) {
-          console.warn('[Sound] Failed to initialize audio:', error);
+          console.log('[Sound] Audio mode set successfully');
+        } catch (e) {
+          console.warn('[Sound] Failed to set audio mode:', e);
         }
-      } else {
-        setIsAudioReady(true);
       }
+      setIsReady(true);
     };
-    
-    initAudio();
-    
-    // Cleanup sounds on unmount
+    init();
+
     return () => {
+      // Cleanup
       Object.values(soundsRef.current).forEach(sound => {
-        if (sound) {
-          sound.unloadAsync().catch(() => {});
-        }
+        if (sound) sound.unloadAsync().catch(() => {});
       });
     };
   }, []);
@@ -101,38 +88,41 @@ export function SoundProvider({ children }: { children: React.ReactNode }) {
   }, [isMuted, getAudioContext]);
 
   // Play sound using expo-av (for native)
-  const playNativeSound = useCallback(async (
-    frequencies: number[], 
-    durations: number[],
-    soundKey: string
-  ) => {
-    if (isMuted || !isAudioReady || Platform.OS === 'web') return;
+  const playNativeBeep = useCallback(async (frequency: number, durationMs: number, soundKey: string) => {
+    if (isMuted || !isReady || Platform.OS === 'web') return;
     
     try {
-      // Create a simple tone using expo-av
-      // Since we can't generate tones directly, we'll use a workaround
-      // by creating short sounds programmatically
+      // Unload previous sound if exists
+      if (soundsRef.current[soundKey]) {
+        await soundsRef.current[soundKey]?.unloadAsync();
+      }
+
+      // Create a simple audio buffer with beep
+      const sampleRate = 44100;
+      const numSamples = Math.floor(sampleRate * (durationMs / 1000));
+      
+      // Generate WAV header + audio data
+      const wavBuffer = generateWavBuffer(frequency, numSamples, sampleRate);
+      const base64 = arrayBufferToBase64(wavBuffer);
       
       const { sound } = await Audio.Sound.createAsync(
-        // Use a simple approach - play a beep pattern
-        { uri: generateToneDataUri(frequencies[0], durations[0] * 1000) },
-        { shouldPlay: true, volume: isMuted ? 0 : 0.5 }
+        { uri: `data:audio/wav;base64,${base64}` },
+        { shouldPlay: true, volume: 0.5 }
       );
       
-      // Store reference for cleanup
-      soundsRef.current[soundKey as keyof typeof soundsRef.current] = sound;
+      soundsRef.current[soundKey] = sound;
       
-      // Unload after playing
+      // Auto cleanup after playing
       sound.setOnPlaybackStatusUpdate((status) => {
         if (status.isLoaded && status.didJustFinish) {
           sound.unloadAsync().catch(() => {});
+          soundsRef.current[soundKey] = null;
         }
       });
     } catch (error) {
-      // Fallback: just log the error, don't crash
       console.warn('[Sound] Native sound error:', error);
     }
-  }, [isMuted, isAudioReady]);
+  }, [isMuted, isReady]);
 
   const toggleMute = useCallback(() => {
     setIsMuted(prev => !prev);
@@ -140,48 +130,43 @@ export function SoundProvider({ children }: { children: React.ReactNode }) {
 
   const playCorrectSound = useCallback(() => {
     if (Platform.OS === 'web') {
-      // Happy ascending melody: C5, E5, G5, C6
-      playWebSound([523.25, 659.25, 783.99, 1046.50], [0.15, 0.15, 0.15, 0.3], 'sine');
+      playWebSound([523.25, 659.25, 783.99, 1046.50], [0.12, 0.12, 0.12, 0.2], 'sine');
     } else {
-      playNativeSound([523.25, 659.25, 783.99], [0.15, 0.15, 0.2], 'correct');
+      playNativeBeep(783.99, 300, 'correct');
     }
-  }, [playWebSound, playNativeSound]);
+  }, [playWebSound, playNativeBeep]);
 
   const playWrongSound = useCallback(() => {
     if (Platform.OS === 'web') {
-      // Sad descending sound
-      playWebSound([400, 350, 300, 250], [0.15, 0.15, 0.15, 0.3], 'sawtooth');
+      playWebSound([400, 350, 300, 250], [0.12, 0.12, 0.12, 0.2], 'sawtooth');
     } else {
-      playNativeSound([400, 300], [0.2, 0.3], 'wrong');
+      playNativeBeep(250, 400, 'wrong');
     }
-  }, [playWebSound, playNativeSound]);
+  }, [playWebSound, playNativeBeep]);
 
   const playBonusSound = useCallback(() => {
     if (Platform.OS === 'web') {
-      // Special arpeggio: C5, E5, G5, C6, E6
-      playWebSound([523.25, 659.25, 783.99, 1046.50, 1318.51], [0.1, 0.1, 0.1, 0.1, 0.2], 'triangle');
+      playWebSound([523.25, 659.25, 783.99, 1046.50, 1318.51], [0.08, 0.08, 0.08, 0.08, 0.15], 'triangle');
     } else {
-      playNativeSound([523.25, 783.99, 1046.50], [0.1, 0.1, 0.15], 'bonus');
+      playNativeBeep(1046.50, 300, 'bonus');
     }
-  }, [playWebSound, playNativeSound]);
+  }, [playWebSound, playNativeBeep]);
 
   const playTickSound = useCallback(() => {
     if (Platform.OS === 'web') {
-      // Short tick sound
       playWebSound([880], [0.05], 'square');
     } else {
-      playNativeSound([880], [0.05], 'tick');
+      playNativeBeep(880, 50, 'tick');
     }
-  }, [playWebSound, playNativeSound]);
+  }, [playWebSound, playNativeBeep]);
 
   const playGameOverSound = useCallback(() => {
     if (Platform.OS === 'web') {
-      // Dramatic descending: G4 -> C4
-      playWebSound([392.00, 349.23, 329.63, 293.66, 261.63], [0.2, 0.2, 0.2, 0.2, 0.4], 'triangle');
+      playWebSound([392.00, 349.23, 329.63, 293.66, 261.63], [0.15, 0.15, 0.15, 0.15, 0.3], 'triangle');
     } else {
-      playNativeSound([392.00, 293.66, 261.63], [0.25, 0.25, 0.4], 'gameOver');
+      playNativeBeep(261.63, 500, 'gameOver');
     }
-  }, [playWebSound, playNativeSound]);
+  }, [playWebSound, playNativeBeep]);
 
   return (
     <SoundContext.Provider value={{
@@ -198,63 +183,58 @@ export function SoundProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Helper function to generate a simple tone as data URI
-// This creates a WAV file with a sine wave
-function generateToneDataUri(frequency: number, durationMs: number): string {
-  const sampleRate = 44100;
-  const numSamples = Math.floor(sampleRate * (durationMs / 1000));
+// Generate a WAV buffer with a sine wave
+function generateWavBuffer(frequency: number, numSamples: number, sampleRate: number): ArrayBuffer {
   const numChannels = 1;
   const bitsPerSample = 16;
-  
-  // WAV header
-  const dataSize = numSamples * numChannels * (bitsPerSample / 8);
+  const bytesPerSample = bitsPerSample / 8;
+  const dataSize = numSamples * numChannels * bytesPerSample;
   const buffer = new ArrayBuffer(44 + dataSize);
   const view = new DataView(buffer);
   
-  // RIFF chunk descriptor
+  // Write WAV header
   writeString(view, 0, 'RIFF');
   view.setUint32(4, 36 + dataSize, true);
   writeString(view, 8, 'WAVE');
-  
-  // fmt sub-chunk
   writeString(view, 12, 'fmt ');
-  view.setUint32(16, 16, true); // Subchunk1Size
-  view.setUint16(20, 1, true); // AudioFormat (PCM)
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
   view.setUint16(22, numChannels, true);
   view.setUint32(24, sampleRate, true);
-  view.setUint32(28, sampleRate * numChannels * (bitsPerSample / 8), true);
-  view.setUint16(32, numChannels * (bitsPerSample / 8), true);
+  view.setUint32(28, sampleRate * numChannels * bytesPerSample, true);
+  view.setUint16(32, numChannels * bytesPerSample, true);
   view.setUint16(34, bitsPerSample, true);
-  
-  // data sub-chunk
   writeString(view, 36, 'data');
   view.setUint32(40, dataSize, true);
   
-  // Generate sine wave samples
-  const volume = 0.3;
+  // Generate sine wave with envelope
+  const volume = 0.4;
   for (let i = 0; i < numSamples; i++) {
     const t = i / sampleRate;
-    // Apply envelope (fade in/out)
-    const envelope = Math.min(1, Math.min(i / (sampleRate * 0.01), (numSamples - i) / (sampleRate * 0.01)));
+    const fadeIn = Math.min(1, i / (sampleRate * 0.01));
+    const fadeOut = Math.min(1, (numSamples - i) / (sampleRate * 0.02));
+    const envelope = fadeIn * fadeOut;
     const sample = Math.sin(2 * Math.PI * frequency * t) * volume * envelope;
     const intSample = Math.max(-32768, Math.min(32767, Math.floor(sample * 32767)));
     view.setInt16(44 + i * 2, intSample, true);
   }
   
-  // Convert to base64
+  return buffer;
+}
+
+function writeString(view: DataView, offset: number, str: string) {
+  for (let i = 0; i < str.length; i++) {
+    view.setUint8(offset + i, str.charCodeAt(i));
+  }
+}
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
   let binary = '';
   for (let i = 0; i < bytes.byteLength; i++) {
     binary += String.fromCharCode(bytes[i]);
   }
-  
-  return 'data:audio/wav;base64,' + btoa(binary);
-}
-
-function writeString(view: DataView, offset: number, string: string) {
-  for (let i = 0; i < string.length; i++) {
-    view.setUint8(offset + i, string.charCodeAt(i));
-  }
+  return btoa(binary);
 }
 
 export function useSound() {
