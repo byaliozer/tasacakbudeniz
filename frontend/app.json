@@ -34,7 +34,9 @@
           "resizeMode": "contain",
           "backgroundColor": "#1CB0F6"
         }
-      ]
+      ],
+      "expo-font",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
