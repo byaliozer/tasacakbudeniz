@@ -347,24 +347,30 @@ export default function QuizScreen() {
         <View style={styles.optionsContainer}>
           {currentQuestion.options.map((option) => {
             const isSelected = selectedAnswer === option.id;
-            const isCorrect = option.id === currentQuestion.correct_option;
-            let optionStyle = styles.optionButton;
-            let textStyle = styles.optionText;
+            const isCorrectOption = option.id === currentQuestion.correct_option;
+            
+            // Determine styles based on answer state
+            let optionStyles = [styles.optionButton];
+            let textStyles = [styles.optionText];
             
             if (answerState !== 'none') {
-              if (isCorrect) {
-                optionStyle = { ...styles.optionButton, ...styles.correctOption };
-                textStyle = { ...styles.optionText, ...styles.selectedText };
-              } else if (isSelected && !isCorrect) {
-                optionStyle = { ...styles.optionButton, ...styles.wrongOption };
-                textStyle = { ...styles.optionText, ...styles.selectedText };
+              // After answer is given
+              if (isCorrectOption) {
+                // Always show correct answer in green
+                optionStyles.push(styles.correctOption);
+                textStyles.push(styles.selectedText);
+              } else if (isSelected) {
+                // Show selected wrong answer in red
+                optionStyles.push(styles.wrongOption);
+                textStyles.push(styles.selectedText);
               }
+              // Non-selected wrong answers stay default (white)
             }
             
             return (
               <TouchableOpacity
                 key={option.id}
-                style={optionStyle}
+                style={optionStyles}
                 onPress={() => handleAnswer(option.id)}
                 disabled={answerState !== 'none'}
                 activeOpacity={0.8}
@@ -372,11 +378,11 @@ export default function QuizScreen() {
                 <View style={styles.optionLetter}>
                   <Text style={styles.optionLetterText}>{option.id}</Text>
                 </View>
-                <Text style={textStyle}>{option.text}</Text>
-                {answerState !== 'none' && isCorrect && (
+                <Text style={textStyles}>{option.text}</Text>
+                {answerState !== 'none' && isCorrectOption && (
                   <Ionicons name="checkmark-circle" size={24} color="#fff" style={styles.optionIcon} />
                 )}
-                {answerState !== 'none' && isSelected && !isCorrect && (
+                {answerState !== 'none' && isSelected && !isCorrectOption && (
                   <Ionicons name="close-circle" size={24} color="#fff" style={styles.optionIcon} />
                 )}
               </TouchableOpacity>
