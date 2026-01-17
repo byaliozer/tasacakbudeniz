@@ -1,476 +1,294 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   TouchableOpacity,
-  TextInput,
+  StyleSheet,
   Animated,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
-import { saveScore } from '../src/services/api';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { useAds } from '../src/context/AdContext';
 import { BannerAd } from '../src/components/BannerAd';
+import { useEffect, useRef } from 'react';
 
 export default function ResultScreen() {
-  const params = useLocalSearchParams<{
-    episodeId: string;
-    episodeName: string;
-    score: string;
-    correctCount: string;
-    totalQuestions: string;
-    bonusCount: string;
-    maxScore: string;
-    livesLeft: string;
-  }>();
+  const params = useLocalSearchParams();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
-
-  const [playerName, setPlayerName] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [showConfetti, setShowConfetti] = useState(false);
-
-  const scoreAnim = useRef(new Animated.Value(0)).current;
-  const confettiAnims = useRef([...Array(20)].map(() => ({
-    x: new Animated.Value(Math.random() * 400 - 200),
-    y: new Animated.Value(-50),
-    rotation: new Animated.Value(0),
-    opacity: new Animated.Value(1),
-  }))).current;
-
-  const score = parseInt(params.score || '0');
-  const correctCount = parseInt(params.correctCount || '0');
-  const totalQuestions = parseInt(params.totalQuestions || '0');
-  const bonusCount = parseInt(params.bonusCount || '0');
-  const maxScore = parseInt(params.maxScore || '0');
-  const livesLeft = parseInt(params.livesLeft || '0');
-  const episodeId = parseInt(params.episodeId || '1');
-
-  const isGameOver = livesLeft <= 0;
-  const percentage = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
+  const { showInterstitial } = useAds();
+  
+  const mode = params.mode as string || 'episode';
+  const episodeId = parseInt(params.episodeId as string) || 1;
+  const score = parseInt(params.score as string) || 0;
+  const correctCount = parseInt(params.correctCount as string) || 0;
+  const speedBonus = parseInt(params.speedBonus as string) || 0;
+  const totalQuestions = parseInt(params.totalQuestions as string) || 25;
+  const questionsAnswered = parseInt(params.questionsAnswered as string) || 0;
+  const isNewRecord = params.isNewRecord === '1';
+  const bestScore = parseInt(params.bestScore as string) || score;
+  
+  const scaleAnim = useRef(new Animated.Value(0)).current;
+  const sparkleAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.timing(scoreAnim, {
-      toValue: score,
-      duration: 1500,
-      useNativeDriver: false,
+    // Show interstitial ad
+    showInterstitial();
+    
+    // Animate score
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      tension: 50,
+      friction: 7,
+      useNativeDriver: true,
     }).start();
-
-    if (percentage >= 70 && !isGameOver) {
-      setShowConfetti(true);
-      animateConfetti();
+    
+    // Sparkle animation for new record
+    if (isNewRecord) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(sparkleAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+          Animated.timing(sparkleAnim, { toValue: 0.5, duration: 500, useNativeDriver: true }),
+        ])
+      ).start();
     }
   }, []);
 
-  const animateConfetti = () => {
-    confettiAnims.forEach((anim, i) => {
-      const delay = i * 100;
-      Animated.parallel([
-        Animated.timing(anim.y, {
-          toValue: 600,
-          duration: 3000,
-          delay,
-          useNativeDriver: true,
-        }),
-        Animated.timing(anim.rotation, {
-          toValue: 360,
-          duration: 3000,
-          delay,
-          useNativeDriver: true,
-        }),
-        Animated.sequence([
-          Animated.delay(delay + 2000),
-          Animated.timing(anim.opacity, {
-            toValue: 0,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-        ]),
-      ]).start();
-    });
-  };
-
-  const getMessage = () => {
-    if (isGameOver) return { icon: 'heart-dislike', text: 'Canların Bitti!', color: '#FF4B4B' };
-    if (percentage >= 90) return { icon: 'trophy', text: 'Mükemmel!', color: '#FFC800' };
-    if (percentage >= 70) return { icon: 'star', text: 'Harika!', color: '#FFC800' };
-    if (percentage >= 50) return { icon: 'thumbs-up', text: 'İyi!', color: '#58CC02' };
-    return { icon: 'refresh', text: 'Tekrar Dene!', color: '#1CB0F6' };
-  };
-
-  const handleSave = async () => {
-    if (!playerName.trim()) {
-      Alert.alert('Hata', 'Lütfen isminizi girin');
-      return;
-    }
-    if (playerName.length > 15) {
-      Alert.alert('Hata', 'İsim en fazla 15 karakter olabilir');
-      return;
-    }
-
-    try {
-      setSaving(true);
-      await saveScore(episodeId, playerName.trim(), score);
-      setSaved(true);
-      Alert.alert('Başarılı', 'Puanınız kaydedildi!');
-    } catch (err) {
-      Alert.alert('Hata', 'Puan kaydedilemedi');
-    } finally {
-      setSaving(false);
+  const handleNextEpisode = () => {
+    if (episodeId < 14) {
+      router.replace(`/quiz?mode=episode&episode=${episodeId + 1}`);
+    } else {
+      router.replace('/episodes');
     }
   };
 
   const handlePlayAgain = () => {
-    router.replace(`/quiz/${episodeId}`);
+    if (mode === 'mixed') {
+      router.replace('/quiz?mode=mixed');
+    } else {
+      router.replace(`/quiz?mode=episode&episode=${episodeId}`);
+    }
   };
 
   const handleLeaderboard = () => {
-    router.push(`/leaderboard/${episodeId}?player_name=${encodeURIComponent(playerName)}`);
+    if (mode === 'mixed') {
+      router.push('/leaderboard?tab=mixed');
+    } else {
+      router.push(`/leaderboard?tab=episode&episode=${episodeId}`);
+    }
   };
-
-  const handleHome = () => {
-    router.replace('/');
-  };
-
-  const messageInfo = getMessage();
-  const animatedScore = scoreAnim.interpolate({
-    inputRange: [0, score],
-    outputRange: ['0', score.toString()],
-  });
-
-  const confettiColors = ['#FF4B4B', '#FFC800', '#58CC02', '#1CB0F6', '#FF9F1A', '#CE82FF'];
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
-      >
-        <ScrollView 
-          contentContainerStyle={[styles.scrollContent, { paddingBottom: 80 + insets.bottom }]}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Confetti */}
-          {showConfetti && (
-            <View style={styles.confettiContainer}>
-              {confettiAnims.map((anim, i) => (
-                <Animated.View
-                  key={i}
-                  style={[
-                    styles.confetti,
-                    {
-                      backgroundColor: confettiColors[i % confettiColors.length],
-                      transform: [
-                        { translateX: anim.x },
-                        { translateY: anim.y },
-                        { rotate: anim.rotation.interpolate({ inputRange: [0, 360], outputRange: ['0deg', '360deg'] }) },
-                      ],
-                      opacity: anim.opacity,
-                    },
-                  ]}
-                />
-              ))}
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        {/* New Record Badge */}
+        {isNewRecord && (
+          <Animated.View style={[styles.newRecordBadge, { opacity: sparkleAnim }]}>
+            <Ionicons name="trophy" size={24} color="#ffc107" />
+            <Text style={styles.newRecordText}>YENİ REKOR!</Text>
+          </Animated.View>
+        )}
+
+        {/* Score */}
+        <Animated.View style={[styles.scoreContainer, { transform: [{ scale: scaleAnim }] }]}>
+          <Text style={styles.scoreLabel}>SKOR</Text>
+          <Text style={styles.scoreValue}>{score}</Text>
+        </Animated.View>
+
+        {/* Stats */}
+        <View style={styles.statsContainer}>
+          <View style={styles.statItem}>
+            <Ionicons name="checkmark-circle" size={28} color="#4caf50" />
+            <Text style={styles.statValue}>{correctCount}</Text>
+            <Text style={styles.statLabel}>Doğru</Text>
+          </View>
+          
+          <View style={styles.statItem}>
+            <Ionicons name="flash" size={28} color="#ff9800" />
+            <Text style={styles.statValue}>+{speedBonus}</Text>
+            <Text style={styles.statLabel}>Hız Bonusu</Text>
+          </View>
+          
+          {mode === 'episode' ? (
+            <View style={styles.statItem}>
+              <Ionicons name="help-circle" size={28} color="#2196f3" />
+              <Text style={styles.statValue}>{correctCount}/{totalQuestions}</Text>
+              <Text style={styles.statLabel}>Soru</Text>
+            </View>
+          ) : (
+            <View style={styles.statItem}>
+              <Ionicons name="list" size={28} color="#2196f3" />
+              <Text style={styles.statValue}>{questionsAnswered}</Text>
+              <Text style={styles.statLabel}>Cevaplanan</Text>
             </View>
           )}
+        </View>
 
-          {/* Header Icon */}
-          <View style={[styles.iconContainer, { backgroundColor: messageInfo.color }]}>
-            <Ionicons name={messageInfo.icon as any} size={48} color="#fff" />
-          </View>
+        {/* Best Score */}
+        <View style={styles.bestScoreContainer}>
+          <Text style={styles.bestScoreLabel}>
+            {mode === 'episode' ? `${episodeId}. Bölüm En İyi Skor` : 'Karışık Mod En İyi'}
+          </Text>
+          <Text style={styles.bestScoreValue}>{bestScore}</Text>
+        </View>
 
-          {/* Message */}
-          <Text style={[styles.message, { color: messageInfo.color }]}>{messageInfo.text}</Text>
-
-          {/* Episode Name */}
-          <Text style={styles.episodeName}>{params.episodeName}</Text>
-
-          {/* Score */}
-          <View style={styles.scoreCard}>
-            <Text style={styles.scoreLabel}>PUANINIZ</Text>
-            <Animated.Text style={styles.scoreValue}>
-              {animatedScore}
-            </Animated.Text>
-            <Text style={styles.maxScore}>/ {maxScore} puan</Text>
-          </View>
-
-          {/* Stats */}
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Ionicons name="checkmark-circle" size={24} color="#58CC02" />
-              <Text style={styles.statValue}>{correctCount}</Text>
-              <Text style={styles.statLabel}>Doğru</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Ionicons name="help-circle" size={24} color="#1CB0F6" />
-              <Text style={styles.statValue}>{totalQuestions}</Text>
-              <Text style={styles.statLabel}>Toplam Soru</Text>
-            </View>
-            <View style={styles.statItem}>
-              <FontAwesome5 name="bolt" size={20} color="#FFC800" />
-              <Text style={styles.statValue}>{bonusCount}</Text>
-              <Text style={styles.statLabel}>Süper Zeka</Text>
-            </View>
-          </View>
-
-          {/* Name Input */}
-          {!saved && (
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>İsminizi girin (max 15 karakter)</Text>
-              <TextInput
-                style={styles.input}
-                value={playerName}
-                onChangeText={setPlayerName}
-                placeholder="İsminiz..."
-                placeholderTextColor="#999"
-                maxLength={15}
-              />
-              <TouchableOpacity
-                style={[styles.saveButton, saving && styles.disabledButton]}
-                onPress={handleSave}
-                disabled={saving}
-              >
-                <Text style={styles.saveButtonText}>
-                  {saving ? 'Kaydediliyor...' : 'Kaydet'}
-                </Text>
-              </TouchableOpacity>
-            </View>
+        {/* Buttons */}
+        <View style={styles.buttonsContainer}>
+          {mode === 'episode' && episodeId < 14 && (
+            <TouchableOpacity style={styles.primaryButton} onPress={handleNextEpisode}>
+              <Ionicons name="arrow-forward" size={24} color="#fff" />
+              <Text style={styles.primaryButtonText}>Sonraki Bölüm</Text>
+            </TouchableOpacity>
           )}
-
-          {saved && (
-            <View style={styles.savedBadge}>
-              <Ionicons name="checkmark-circle" size={20} color="#58CC02" />
-              <Text style={styles.savedText}>Puanınız kaydedildi!</Text>
-            </View>
-          )}
-
-          {/* Action Buttons */}
-          <View style={styles.buttonsContainer}>
-            <TouchableOpacity style={styles.primaryButton} onPress={handlePlayAgain}>
-              <Ionicons name="refresh" size={20} color="#fff" />
-              <Text style={styles.primaryButtonText}>Tekrar Oyna</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.secondaryButton} onPress={handleLeaderboard}>
-              <Ionicons name="trophy" size={20} color="#FFC800" />
-              <Text style={styles.secondaryButtonText}>Sıralama</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.tertiaryButton} onPress={handleHome}>
-              <Ionicons name="home" size={20} color="#1CB0F6" />
-              <Text style={styles.tertiaryButtonText}>Ana Sayfa</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-      
-      {/* Banner Ad at bottom */}
-      <View style={[styles.adContainer, { paddingBottom: insets.bottom }]}>
-        <BannerAd />
+          
+          <TouchableOpacity style={styles.secondaryButton} onPress={handlePlayAgain}>
+            <Ionicons name="refresh" size={24} color="#fff" />
+            <Text style={styles.secondaryButtonText}>Tekrar Oyna</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.secondaryButton} onPress={handleLeaderboard}>
+            <Ionicons name="trophy" size={24} color="#fff" />
+            <Text style={styles.secondaryButtonText}>Liderlik Tablosu</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.outlineButton} onPress={() => router.replace('/')}>
+            <Ionicons name="home" size={24} color="#009688" />
+            <Text style={styles.outlineButtonText}>Ana Menü</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
+
+      <BannerAd />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1CB0F6',
+    backgroundColor: '#1a1a2e',
   },
-  keyboardView: {
+  content: {
     flex: 1,
-  },
-  scrollContent: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  confettiContainer: {
-    ...StyleSheet.absoluteFillObject,
-    overflow: 'hidden',
-    pointerEvents: 'none',
-  },
-  confetti: {
-    position: 'absolute',
-    width: 10,
-    height: 10,
-    borderRadius: 2,
-    left: '50%',
-  },
-  iconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 20,
-    elevation: 5,
-  },
-  message: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginTop: 16,
-  },
-  episodeName: {
-    fontSize: 18,
-    color: '#fff',
-    marginTop: 8,
-  },
-  scoreCard: {
-    backgroundColor: '#fff',
-    borderRadius: 24,
     padding: 24,
-    marginTop: 24,
     alignItems: 'center',
-    width: '100%',
-    elevation: 4,
+    justifyContent: 'center',
+  },
+  newRecordBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,193,7,0.2)',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    gap: 8,
+    marginBottom: 20,
+  },
+  newRecordText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#ffc107',
+  },
+  scoreContainer: {
+    alignItems: 'center',
+    marginBottom: 32,
   },
   scoreLabel: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 16,
+    color: '#888',
     fontWeight: '600',
+    letterSpacing: 2,
   },
   scoreValue: {
-    fontSize: 64,
+    fontSize: 72,
     fontWeight: 'bold',
-    color: '#FFC800',
+    color: '#fff',
   },
-  maxScore: {
-    fontSize: 16,
-    color: '#999',
-  },
-  statsRow: {
+  statsContainer: {
     flexDirection: 'row',
-    marginTop: 20,
-    gap: 16,
+    justifyContent: 'space-around',
+    width: '100%',
+    marginBottom: 32,
+    backgroundColor: '#2d2d44',
+    borderRadius: 16,
+    padding: 20,
   },
   statItem: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
     alignItems: 'center',
-    minWidth: 90,
-    elevation: 2,
+    gap: 4,
   },
   statValue: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
-    marginTop: 4,
+    color: '#fff',
   },
   statLabel: {
     fontSize: 12,
-    color: '#666',
-    marginTop: 2,
+    color: '#888',
   },
-  inputContainer: {
-    width: '100%',
-    marginTop: 24,
-    backgroundColor: '#fff',
-    borderRadius: 16,
+  bestScoreContainer: {
+    alignItems: 'center',
+    marginBottom: 32,
+    backgroundColor: '#2d2d44',
+    borderRadius: 12,
     padding: 16,
+    width: '100%',
   },
-  inputLabel: {
+  bestScoreLabel: {
     fontSize: 14,
-    color: '#333',
-    marginBottom: 8,
-    fontWeight: '600',
+    color: '#888',
   },
-  input: {
-    backgroundColor: '#F5F5F5',
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 16,
-    color: '#333',
-    marginBottom: 12,
-  },
-  saveButton: {
-    backgroundColor: '#58CC02',
-    borderRadius: 12,
-    padding: 14,
-    alignItems: 'center',
-    elevation: 4,
-  },
-  disabledButton: {
-    backgroundColor: '#AFAFAF',
-  },
-  saveButtonText: {
-    color: '#fff',
-    fontSize: 16,
+  bestScoreValue: {
+    fontSize: 28,
     fontWeight: 'bold',
-  },
-  savedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(88, 204, 2, 0.2)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginTop: 20,
-    gap: 8,
-  },
-  savedText: {
-    color: '#58CC02',
-    fontWeight: '600',
+    color: '#ffc107',
   },
   buttonsContainer: {
     width: '100%',
-    marginTop: 24,
     gap: 12,
   },
   primaryButton: {
-    backgroundColor: '#58CC02',
-    borderRadius: 16,
-    padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#009688',
+    borderRadius: 12,
+    padding: 16,
     gap: 8,
-    elevation: 4,
   },
   primaryButtonText: {
-    color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
+    color: '#fff',
   },
   secondaryButton: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#2d2d44',
+    borderRadius: 12,
+    padding: 16,
     gap: 8,
-    elevation: 2,
   },
   secondaryButtonText: {
-    color: '#333',
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
   },
-  tertiaryButton: {
-    backgroundColor: 'transparent',
-    borderRadius: 16,
-    padding: 16,
+  outlineButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    backgroundColor: 'transparent',
     borderWidth: 2,
-    borderColor: '#fff',
+    borderColor: '#009688',
+    borderRadius: 12,
+    padding: 14,
+    gap: 8,
   },
-  tertiaryButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  adContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#fff',
+  outlineButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#009688',
   },
 });
