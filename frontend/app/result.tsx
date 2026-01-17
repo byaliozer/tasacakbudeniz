@@ -15,6 +15,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { saveScore } from '../src/services/api';
+import { BannerAd } from '../src/components/BannerAd';
 
 export default function ResultScreen() {
   const params = useLocalSearchParams<{
@@ -264,8 +265,15 @@ export default function ResultScreen() {
               <Text style={styles.tertiaryButtonText}>Ana Sayfa</Text>
             </TouchableOpacity>
           </View>
+          
+          <View style={{ height: 80 }} />
         </ScrollView>
       </KeyboardAvoidingView>
+      
+      {/* Banner Ad at bottom */}
+      <View style={styles.adContainer}>
+        <BannerAd />
+      </View>
     </SafeAreaView>
   );
 }
@@ -485,5 +493,13 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  adContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    paddingBottom: Platform.OS === 'ios' ? 20 : 0,
   },
 });

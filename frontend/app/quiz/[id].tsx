@@ -9,11 +9,14 @@ import {
   Animated,
   ActivityIndicator,
   ScrollView,
+  Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { startQuiz, Question, QuizResponse } from '../../src/services/api';
 import { useSound } from '../../src/context/SoundContext';
+import { useAds } from '../../src/context/AdContext';
+import { BannerAd } from '../../src/components/BannerAd';
 
 const { width } = Dimensions.get('window');
 const TIMER_DURATION = 20;
@@ -25,6 +28,7 @@ export default function QuizScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { isMuted, toggleMute, playCorrectSound, playWrongSound, playBonusSound, playTickSound, playGameOverSound } = useSound();
+  const { showInterstitial } = useAds();
 
   const [quiz, setQuiz] = useState<QuizResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -124,7 +128,7 @@ export default function QuizScreen() {
     setLives(newLives);
     
     if (newLives <= 0) {
-      endGame();
+      endGame(true); // Game over due to lives
     } else {
       setTimeout(() => nextQuestion(), 2000);
     }
@@ -177,7 +181,7 @@ export default function QuizScreen() {
       setLives(newLives);
       
       if (newLives <= 0) {
-        setTimeout(() => endGame(), 1500);
+        setTimeout(() => endGame(true), 1500); // Game over due to lives
       } else {
         setTimeout(() => nextQuestion(), 2000);
       }
@@ -192,15 +196,20 @@ export default function QuizScreen() {
       setAnswerState('none');
       setSelectedAnswer(null);
     } else {
-      endGame();
+      endGame(false); // Completed all questions
     }
   };
 
-  const endGame = () => {
+  const endGame = async (isGameOver: boolean) => {
     setGameOver(true);
-    if (lives <= 0) {
+    
+    if (isGameOver) {
       playGameOverSound();
     }
+    
+    // Show interstitial ad when game ends (game over or completed)
+    await showInterstitial();
+    
     router.replace({
       pathname: '/result',
       params: {
@@ -208,10 +217,10 @@ export default function QuizScreen() {
         episodeName: quiz?.episode_name || '',
         score: score.toString(),
         correctCount: correctCount.toString(),
-        totalQuestions: currentIndex.toString(),
+        totalQuestions: (currentIndex + 1).toString(),
         bonusCount: bonusCount.toString(),
         maxScore: quiz?.max_possible_score.toString() || '0',
-        livesLeft: lives.toString(),
+        livesLeft: (isGameOver ? 0 : lives).toString(),
       },
     });
   };
@@ -397,7 +406,14 @@ export default function QuizScreen() {
         <TouchableOpacity style={styles.soundButton} onPress={toggleMute}>
           <Ionicons name={isMuted ? 'volume-mute' : 'volume-high'} size={24} color="#fff" />
         </TouchableOpacity>
+        
+        <View style={{ height: 80 }} />
       </ScrollView>
+
+      {/* Banner Ad at bottom */}
+      <View style={styles.adContainer}>
+        <BannerAd />
+      </View>
 
       {/* Bonus Popup */}
       {showBonus && (
@@ -647,7 +663,7 @@ const styles = StyleSheet.create({
   },
   soundButton: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 100,
     right: 20,
     backgroundColor: 'rgba(0,0,0,0.3)',
     width: 48,
@@ -655,6 +671,14 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  adContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    paddingBottom: Platform.OS === 'ios' ? 20 : 0,
   },
   bonusPopup: {
     position: 'absolute',

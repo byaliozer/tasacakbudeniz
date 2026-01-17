@@ -14,6 +14,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { getEpisodes, Episode } from '../src/services/api';
+import { BannerAd } from '../src/components/BannerAd';
 
 const { width } = Dimensions.get('window');
 const BANNER_URL = 'https://customer-assets.emergentagent.com/job_denizquiz/artifacts/3342mhiv_image.png';
@@ -163,8 +164,13 @@ export default function HomeScreen() {
             )}
           </>
         )}
-        <View style={{ height: 40 }} />
+        <View style={{ height: 80 }} />
       </ScrollView>
+      
+      {/* Banner Ad at bottom */}
+      <View style={styles.adContainer}>
+        <BannerAd />
+      </View>
     </SafeAreaView>
   );
 }
@@ -325,5 +331,13 @@ const styles = StyleSheet.create({
   },
   lockedText: {
     color: '#8B8B8B',
+  },
+  adContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    paddingBottom: Platform.OS === 'ios' ? 20 : 0,
   },
 });
