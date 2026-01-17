@@ -350,12 +350,17 @@ export default function QuizScreen() {
         {/* Options */}
         <View style={styles.optionsContainer}>
           {currentQuestion.options.map((option) => {
-            const isSelected = selectedAnswer === option.id;
-            const isCorrectOption = option.id === currentQuestion.correct_option;
+            // Normalize IDs for comparison
+            const normalizedOptionId = String(option.id).trim().toUpperCase();
+            const normalizedCorrectId = String(currentQuestion.correct_option).trim().toUpperCase();
+            const normalizedSelectedId = selectedAnswer ? String(selectedAnswer).trim().toUpperCase() : null;
+            
+            const isSelected = normalizedSelectedId === normalizedOptionId;
+            const isCorrectOption = normalizedOptionId === normalizedCorrectId;
             
             // Determine styles based on answer state
-            let optionStyles = [styles.optionButton];
-            let textStyles = [styles.optionText];
+            let optionStyles: any[] = [styles.optionButton];
+            let textStyles: any[] = [styles.optionText];
             
             if (answerState !== 'none') {
               // After answer is given
