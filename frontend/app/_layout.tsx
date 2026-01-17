@@ -1,33 +1,56 @@
-import React, { useEffect, useState } from 'react';
-import { Stack } from 'expo-router';
+import React, { useEffect, useState, useCallback } from 'react';
+import { Stack, useRouter, useSegments, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SoundProvider } from '../src/context/SoundContext';
 import { AdProvider } from '../src/context/AdContext';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { hasUsername } from '../src/services/api';
-import { useRouter, useSegments } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 
 function RootLayoutNav() {
   const [isLoading, setIsLoading] = useState(true);
   const [needsUsername, setNeedsUsername] = useState(false);
   const router = useRouter();
   const segments = useSegments();
+  const pathname = usePathname();
 
+  const checkUsername = useCallback(async () => {
+    try {
+      const has = await hasUsername();
+      setNeedsUsername(!has);
+      setIsLoading(false);
+    } catch (e) {
+      console.error('Error checking username:', e);
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Check on mount
   useEffect(() => {
     checkUsername();
   }, []);
 
+  // Re-check when pathname changes (after username is set)
   useEffect(() => {
-    if (!isLoading && needsUsername && segments[0] !== 'username') {
+    if (!isLoading && pathname === '/') {
+      checkUsername();
+    }
+  }, [pathname, isLoading]);
+
+  // Redirect logic
+  useEffect(() => {
+    if (isLoading) return;
+
+    const inUsernameScreen = segments[0] === 'username';
+
+    if (needsUsername && !inUsernameScreen) {
+      // Need username but not on username screen -> redirect
       router.replace('/username');
+    } else if (!needsUsername && inUsernameScreen) {
+      // Have username but on username screen -> go to home
+      router.replace('/');
     }
   }, [isLoading, needsUsername, segments]);
-
-  const checkUsername = async () => {
-    const has = await hasUsername();
-    setNeedsUsername(!has);
-    setIsLoading(false);
-  };
 
   if (isLoading) {
     return (
