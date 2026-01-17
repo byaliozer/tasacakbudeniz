@@ -6,11 +6,27 @@ interface BannerAdProps {
   style?: object;
 }
 
-// Native banner component - will be imported dynamically only on native
-let NativeBannerAd: React.ComponentType<any> | null = null;
-
 export function BannerAd({ style }: BannerAdProps) {
-  // Always show placeholder on web
+  const [NativeAd, setNativeAd] = React.useState<any>(null);
+  const [AdSize, setAdSize] = React.useState<any>(null);
+  const [error, setError] = React.useState(false);
+
+  React.useEffect(() => {
+    // Only try to load native ads module on native platforms
+    if (Platform.OS !== 'web') {
+      try {
+        // Dynamic require at runtime
+        const adsModule = require('react-native-google-mobile-ads');
+        setNativeAd(() => adsModule.BannerAd);
+        setAdSize(adsModule.BannerAdSize);
+      } catch (e) {
+        console.log('[BannerAd] Native ads module not available');
+        setError(true);
+      }
+    }
+  }, []);
+
+  // Web placeholder
   if (Platform.OS === 'web') {
     return (
       <View style={[styles.placeholder, style]}>
@@ -19,31 +35,8 @@ export function BannerAd({ style }: BannerAdProps) {
     );
   }
 
-  // On native, try to render real banner
-  return <NativeBanner style={style} />;
-}
-
-// Separate component for native banner to isolate the native-only import
-function NativeBanner({ style }: { style?: object }) {
-  const [AdComponent, setAdComponent] = React.useState<any>(null);
-  const [adSize, setAdSize] = React.useState<any>(null);
-  const [error, setError] = React.useState(false);
-
-  React.useEffect(() => {
-    // Only try to import on native platforms
-    if (Platform.OS !== 'web') {
-      try {
-        const adsModule = require('react-native-google-mobile-ads');
-        setAdComponent(() => adsModule.BannerAd);
-        setAdSize(adsModule.BannerAdSize);
-      } catch (e) {
-        console.log('[BannerAd] Native module not available:', e);
-        setError(true);
-      }
-    }
-  }, []);
-
-  if (error || !AdComponent || !adSize) {
+  // Native but module not loaded or error
+  if (error || !NativeAd || !AdSize) {
     return (
       <View style={[styles.placeholder, style]}>
         <Text style={styles.placeholderText}>📢 Reklam Alanı</Text>
@@ -51,19 +44,20 @@ function NativeBanner({ style }: { style?: object }) {
     );
   }
 
+  // Native with module available
   return (
     <View style={[styles.container, style]}>
-      <AdComponent
+      <NativeAd
         unitId={ADMOB_CONFIG.BANNER_ID}
-        size={adSize.ANCHORED_ADAPTIVE_BANNER}
+        size={AdSize.ANCHORED_ADAPTIVE_BANNER}
         requestOptions={{
           requestNonPersonalizedAdsOnly: true,
         }}
         onAdLoaded={() => {
-          console.log('[BannerAd] Ad loaded');
+          console.log('[BannerAd] Loaded');
         }}
         onAdFailedToLoad={(err: any) => {
-          console.warn('[BannerAd] Failed to load:', err);
+          console.warn('[BannerAd] Failed:', err);
           setError(true);
         }}
       />
