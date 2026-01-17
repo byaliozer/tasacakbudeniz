@@ -36,8 +36,10 @@ export function AdProvider({ children }: { children: React.ReactNode }) {
     
     try {
       // Dynamic require only happens at runtime on native
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { InterstitialAd, AdEventType } = require('react-native-google-mobile-ads');
+      // Using eval to prevent Metro from bundling this for web
+      // eslint-disable-next-line @typescript-eslint/no-var-requires, no-eval
+      const adsModule = eval("require('react-native-google-mobile-ads')");
+      const { InterstitialAd, AdEventType } = adsModule;
       
       const interstitial = InterstitialAd.createForAdRequest(ADMOB_CONFIG.INTERSTITIAL_ID, {
         requestNonPersonalizedAdsOnly: true,
