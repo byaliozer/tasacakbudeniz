@@ -23,7 +23,7 @@ export default function MainMenu() {
         {/* Banner Image */}
         <View style={styles.bannerContainer}>
           <Image
-            source={require('../assets/banner.png')}
+            source={require('../assets/images/app-image.png')}
             style={styles.banner}
             resizeMode="cover"
           />
