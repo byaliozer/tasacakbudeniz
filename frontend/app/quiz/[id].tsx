@@ -4,13 +4,12 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   Dimensions,
   Animated,
   ActivityIndicator,
   ScrollView,
-  Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { startQuiz, Question, QuizResponse } from '../../src/services/api';
@@ -27,6 +26,7 @@ type AnswerState = 'none' | 'correct' | 'wrong' | 'timeout';
 export default function QuizScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { isMuted, toggleMute, playCorrectSound, playWrongSound, playBonusSound, playTickSound, playGameOverSound } = useSound();
   const { showInterstitial } = useAds();
 
@@ -103,11 +103,9 @@ export default function QuizScreen() {
           handleTimeout();
           return 0;
         }
-        // Play tick sound in last 10 seconds
         if (prev <= 11) {
           playTickSound();
         }
-        // Shake animation in last 10 seconds
         if (prev <= 11) {
           Animated.sequence([
             Animated.timing(shakeAnim, { toValue: 5, duration: 50, useNativeDriver: true }),
@@ -128,7 +126,7 @@ export default function QuizScreen() {
     setLives(newLives);
     
     if (newLives <= 0) {
-      endGame(true); // Game over due to lives
+      endGame(true);
     } else {
       setTimeout(() => nextQuestion(), 2000);
     }
@@ -156,7 +154,6 @@ export default function QuizScreen() {
         setBonusCount(prev => prev + 1);
         setShowBonus(true);
         playBonusSound();
-        // Bonus animation
         Animated.sequence([
           Animated.timing(bonusAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
           Animated.delay(1500),
@@ -167,7 +164,6 @@ export default function QuizScreen() {
       }
       
       setScore(prev => prev + points);
-      // Score pop animation
       Animated.sequence([
         Animated.timing(scaleAnim, { toValue: 1.3, duration: 150, useNativeDriver: true }),
         Animated.timing(scaleAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
@@ -181,7 +177,7 @@ export default function QuizScreen() {
       setLives(newLives);
       
       if (newLives <= 0) {
-        setTimeout(() => endGame(true), 1500); // Game over due to lives
+        setTimeout(() => endGame(true), 1500);
       } else {
         setTimeout(() => nextQuestion(), 2000);
       }
@@ -196,7 +192,7 @@ export default function QuizScreen() {
       setAnswerState('none');
       setSelectedAnswer(null);
     } else {
-      endGame(false); // Completed all questions
+      endGame(false);
     }
   };
 
@@ -207,7 +203,6 @@ export default function QuizScreen() {
       playGameOverSound();
     }
     
-    // Show interstitial ad when game ends (game over or completed)
     await showInterstitial();
     
     router.replace({
@@ -250,18 +245,18 @@ export default function QuizScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#FFC800" />
           <Text style={styles.loadingText}>Quiz yükleniyor...</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (error || !quiz) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.loadingContainer}>
           <Ionicons name="warning" size={64} color="#FF4B4B" />
           <Text style={styles.errorText}>{error || 'Quiz yüklenemedi'}</Text>
@@ -269,7 +264,7 @@ export default function QuizScreen() {
             <Text style={styles.backButtonText}>Geri Dön</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -278,7 +273,7 @@ export default function QuizScreen() {
   const difficultyInfo = getDifficultyLabel(currentQuestion.difficulty);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleExit} style={styles.exitButton}>
@@ -310,7 +305,7 @@ export default function QuizScreen() {
 
       <ScrollView 
         style={styles.content} 
-        contentContainerStyle={styles.contentContainer}
+        contentContainerStyle={[styles.contentContainer, { paddingBottom: 80 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Question Info */}
@@ -386,17 +381,17 @@ export default function QuizScreen() {
           <View style={styles.feedbackContainer}>
             {answerState === 'correct' && (
               <Text style={styles.correctFeedback}>
-                🎉 Doğru! +{currentQuestion.points}{showBonus ? '+5 bonus' : ''} puan
+                Doğru! +{currentQuestion.points}{showBonus ? '+5 bonus' : ''} puan
               </Text>
             )}
             {answerState === 'wrong' && (
               <Text style={styles.wrongFeedback}>
-                😔 Yanlış!
+                Yanlış!
               </Text>
             )}
             {answerState === 'timeout' && (
               <Text style={styles.timeoutFeedback}>
-                ⏰ Süre doldu!
+                Süre doldu!
               </Text>
             )}
           </View>
@@ -406,12 +401,10 @@ export default function QuizScreen() {
         <TouchableOpacity style={styles.soundButton} onPress={toggleMute}>
           <Ionicons name={isMuted ? 'volume-mute' : 'volume-high'} size={24} color="#fff" />
         </TouchableOpacity>
-        
-        <View style={{ height: 80 }} />
       </ScrollView>
 
       {/* Banner Ad at bottom */}
-      <View style={styles.adContainer}>
+      <View style={[styles.adContainer, { paddingBottom: insets.bottom }]}>
         <BannerAd />
       </View>
 
@@ -425,12 +418,12 @@ export default function QuizScreen() {
           },
         ]}>
           <FontAwesome5 name="bolt" size={32} color="#FFC800" />
-          <Text style={styles.bonusTitle}>⚡ SÜPER ZEKA!</Text>
+          <Text style={styles.bonusTitle}>SÜPER ZEKA!</Text>
           <Text style={styles.bonusSubtitle}>Yıldırım hızında cevapladın</Text>
           <Text style={styles.bonusPoints}>+5 BONUS PUAN!</Text>
         </Animated.View>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -515,7 +508,6 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: 16,
-    paddingBottom: 40,
   },
   questionInfo: {
     flexDirection: 'row',
@@ -565,10 +557,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 24,
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
     elevation: 4,
   },
   questionText: {
@@ -587,10 +575,6 @@ const styles = StyleSheet.create({
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
     elevation: 3,
     borderWidth: 2,
     borderColor: 'transparent',
@@ -662,9 +646,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   soundButton: {
-    position: 'absolute',
-    bottom: 100,
-    right: 20,
+    alignSelf: 'flex-end',
+    marginTop: 20,
     backgroundColor: 'rgba(0,0,0,0.3)',
     width: 48,
     height: 48,
@@ -678,7 +661,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: '#fff',
-    paddingBottom: Platform.OS === 'ios' ? 20 : 0,
   },
   bonusPopup: {
     position: 'absolute',
@@ -689,10 +671,6 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 24,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
     elevation: 10,
   },
   bonusTitle: {

@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   TextInput,
   Animated,
   Alert,
@@ -12,6 +11,7 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { saveScore } from '../src/services/api';
@@ -29,6 +29,7 @@ export default function ResultScreen() {
     livesLeft: string;
   }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const [playerName, setPlayerName] = useState('');
   const [saving, setSaving] = useState(false);
@@ -55,14 +56,12 @@ export default function ResultScreen() {
   const percentage = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
 
   useEffect(() => {
-    // Animate score counting up
     Animated.timing(scoreAnim, {
       toValue: score,
       duration: 1500,
       useNativeDriver: false,
     }).start();
 
-    // Show confetti for high scores
     if (percentage >= 70 && !isGameOver) {
       setShowConfetti(true);
       animateConfetti();
@@ -148,13 +147,13 @@ export default function ResultScreen() {
   const confettiColors = ['#FF4B4B', '#FFC800', '#58CC02', '#1CB0F6', '#FF9F1A', '#CE82FF'];
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
         <ScrollView 
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: 80 + insets.bottom }]}
           showsVerticalScrollIndicator={false}
         >
           {/* Confetti */}
@@ -265,16 +264,14 @@ export default function ResultScreen() {
               <Text style={styles.tertiaryButtonText}>Ana Sayfa</Text>
             </TouchableOpacity>
           </View>
-          
-          <View style={{ height: 80 }} />
         </ScrollView>
       </KeyboardAvoidingView>
       
       {/* Banner Ad at bottom */}
-      <View style={styles.adContainer}>
+      <View style={[styles.adContainer, { paddingBottom: insets.bottom }]}>
         <BannerAd />
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -289,7 +286,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 20,
     alignItems: 'center',
-    paddingBottom: 40,
   },
   confettiContainer: {
     ...StyleSheet.absoluteFillObject,
@@ -310,10 +306,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
     elevation: 5,
   },
   message: {
@@ -333,10 +325,6 @@ const styles = StyleSheet.create({
     marginTop: 24,
     alignItems: 'center',
     width: '100%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
     elevation: 4,
   },
   scoreLabel: {
@@ -364,10 +352,6 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
     minWidth: 90,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
     elevation: 2,
   },
   statValue: {
@@ -407,10 +391,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 14,
     alignItems: 'center',
-    shadowColor: '#46A302',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
     elevation: 4,
   },
   disabledButton: {
@@ -448,10 +428,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    shadowColor: '#46A302',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
     elevation: 4,
   },
   primaryButtonText: {
@@ -467,10 +443,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
     elevation: 2,
   },
   secondaryButtonText: {
@@ -500,6 +472,5 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: '#fff',
-    paddingBottom: Platform.OS === 'ios' ? 20 : 0,
   },
 });

@@ -8,9 +8,9 @@ import {
   Image,
   ActivityIndicator,
   Dimensions,
-  SafeAreaView,
   Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { getEpisodes, Episode } from '../src/services/api';
@@ -21,6 +21,7 @@ const BANNER_URL = 'https://customer-assets.emergentagent.com/job_denizquiz/arti
 
 export default function HomeScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +56,7 @@ export default function HomeScreen() {
   const lockedEpisodes = episodes.filter(e => e.is_locked);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Banner Section */}
         <View style={styles.bannerContainer}>
@@ -164,14 +165,14 @@ export default function HomeScreen() {
             )}
           </>
         )}
-        <View style={{ height: 80 }} />
+        <View style={{ height: 80 + insets.bottom }} />
       </ScrollView>
       
       {/* Banner Ad at bottom */}
-      <View style={styles.adContainer}>
+      <View style={[styles.adContainer, { paddingBottom: insets.bottom }]}>
         <BannerAd />
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -219,9 +220,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
     textAlign: 'center',
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 3,
   },
   infoRow: {
     flexDirection: 'row',
@@ -236,10 +234,6 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
     elevation: 4,
   },
   heartsContainer: {
@@ -295,10 +289,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
     elevation: 4,
   },
   lockedCard: {
@@ -338,6 +328,5 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: '#fff',
-    paddingBottom: Platform.OS === 'ios' ? 20 : 0,
   },
 });

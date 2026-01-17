@@ -4,11 +4,11 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   FlatList,
   ActivityIndicator,
   Animated,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { getLeaderboard, LeaderboardEntry, LeaderboardResponse } from '../../src/services/api';
@@ -16,6 +16,7 @@ import { getLeaderboard, LeaderboardEntry, LeaderboardResponse } from '../../src
 export default function LeaderboardScreen() {
   const { id, player_name } = useLocalSearchParams<{ id: string; player_name?: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const [leaderboard, setLeaderboard] = useState<LeaderboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -34,10 +35,8 @@ export default function LeaderboardScreen() {
       const data = await getLeaderboard(parseInt(id || '1'), player_name);
       setLeaderboard(data);
       
-      // Initialize animations for each item
       itemAnims.current = data.top_10.map(() => new Animated.Value(0));
       
-      // Stagger animations
       data.top_10.forEach((_, index) => {
         Animated.timing(itemAnims.current[index], {
           toValue: 1,
@@ -112,7 +111,7 @@ export default function LeaderboardScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -140,18 +139,16 @@ export default function LeaderboardScreen() {
         </View>
       ) : (
         <>
-          {/* Total Players */}
           <Text style={styles.totalPlayers}>
             Toplam {leaderboard?.total_players || 0} oyuncu
           </Text>
 
-          {/* Top 10 List */}
           {leaderboard && leaderboard.top_10.length > 0 ? (
             <FlatList
               data={leaderboard.top_10}
               renderItem={renderItem}
               keyExtractor={(item, index) => `${item.player_name}-${index}`}
-              contentContainerStyle={styles.listContent}
+              contentContainerStyle={[styles.listContent, { paddingBottom: 120 + insets.bottom }]}
               showsVerticalScrollIndicator={false}
               ListFooterComponent={
                 leaderboard.player_rank && leaderboard.player_rank > 10 && leaderboard.player_entry ? (
@@ -182,7 +179,7 @@ export default function LeaderboardScreen() {
           )}
 
           {/* Action Buttons */}
-          <View style={styles.buttonsContainer}>
+          <View style={[styles.buttonsContainer, { paddingBottom: insets.bottom + 16 }]}>
             <TouchableOpacity 
               style={styles.primaryButton} 
               onPress={() => router.replace(`/quiz/${id}`)}
@@ -200,7 +197,7 @@ export default function LeaderboardScreen() {
           </View>
         </>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -266,7 +263,6 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: 16,
-    paddingBottom: 20,
   },
   leaderboardItem: {
     backgroundColor: '#fff',
@@ -275,10 +271,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
     elevation: 2,
   },
   goldRow: {
@@ -366,7 +358,12 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   buttonsContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     padding: 16,
+    backgroundColor: '#1CB0F6',
     gap: 12,
   },
   primaryButton: {
@@ -377,10 +374,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    shadowColor: '#46A302',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
     elevation: 4,
   },
   primaryButtonText: {
@@ -396,10 +389,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
     elevation: 2,
   },
   secondaryButtonText: {
