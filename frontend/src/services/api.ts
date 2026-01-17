@@ -1,4 +1,14 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://denizquiz.emergent.host';
+
+// Storage keys
+const STORAGE_KEYS = {
+  USERNAME: '@denizquiz_username',
+  SETTINGS: '@denizquiz_settings',
+};
+
+// === TYPES ===
 
 export interface Episode {
   id: number;
@@ -23,39 +33,84 @@ export interface Question {
 }
 
 export interface QuizResponse {
-  episode_id: number;
+  episode_id: number | null;
   episode_name: string;
   questions: Question[];
   total_questions: number;
   max_possible_score: number;
+  mode: 'episode' | 'mixed';
 }
 
 export interface LeaderboardEntry {
   rank: number;
   player_name: string;
   score: number;
-  timestamp: string;
+  episodes_completed?: number;
+  questions_answered?: number;
 }
 
 export interface LeaderboardResponse {
-  top_10: LeaderboardEntry[];
+  entries: LeaderboardEntry[];
   player_rank: number | null;
-  player_entry: LeaderboardEntry | null;
+  player_score: number | null;
   total_players: number;
 }
 
-export async function getEpisodes(): Promise<Episode[]> {
-  const response = await fetch(`${API_URL}/api/episodes`);
-  if (!response.ok) throw new Error('Failed to fetch episodes');
-  return response.json();
+export interface PlayerStats {
+  player_name: string;
+  global_score: number;
+  episodes_completed: number;
+  episode_scores: Record<number, number>;
+  mixed_best_score: number;
 }
+
+export interface Settings {
+  soundEnabled: boolean;
+  vibrationEnabled: boolean;
+}
+
+// === USERNAME MANAGEMENT ===
+
+export async function getUsername(): Promise<string | null> {
+  try {
+    return await AsyncStorage.getItem(STORAGE_KEYS.USERNAME);
+  } catch {
+    return null;
+  }
+}
+
+export async function setUsername(name: string): Promise<void> {
+  await AsyncStorage.setItem(STORAGE_KEYS.USERNAME, name);
+}
+
+export async function hasUsername(): Promise<boolean> {
+  const name = await getUsername();
+  return name !== null && name.length > 0;
+}
+
+// === SETTINGS MANAGEMENT ===
+
+export async function getSettings(): Promise<Settings> {
+  try {
+    const stored = await AsyncStorage.getItem(STORAGE_KEYS.SETTINGS);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch {}
+  return { soundEnabled: true, vibrationEnabled: true };
+}
+
+export async function saveSettings(settings: Settings): Promise<void> {
+  await AsyncStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+}
+
+// === API FUNCTIONS ===
 
 // Transform API response to normalized format
 function normalizeQuizResponse(data: any): QuizResponse {
+  const optionLetters = ['A', 'B', 'C', 'D'];
+  
   const questions: Question[] = data.questions.map((q: any, qIndex: number) => {
-    const optionLetters = ['A', 'B', 'C', 'D'];
-    
-    // Check if options have 'id' field (new format) or 'is_correct' field (old format)
     const hasId = q.options[0]?.id !== undefined;
     const hasIsCorrect = q.options[0]?.is_correct !== undefined;
     
@@ -63,23 +118,19 @@ function normalizeQuizResponse(data: any): QuizResponse {
     let correctOption: string;
     
     if (hasId && q.correct_option) {
-      // New format: options have id and correct_option is provided
       normalizedOptions = q.options.map((opt: any) => ({
         id: String(opt.id).trim().toUpperCase(),
         text: opt.text
       }));
       correctOption = String(q.correct_option).trim().toUpperCase();
     } else if (hasIsCorrect) {
-      // Old format: options have is_correct boolean
       normalizedOptions = q.options.map((opt: any, idx: number) => ({
         id: optionLetters[idx],
         text: opt.text
       }));
-      // Find the correct option
       const correctIdx = q.options.findIndex((opt: any) => opt.is_correct === true);
       correctOption = correctIdx >= 0 ? optionLetters[correctIdx] : 'A';
     } else {
-      // Fallback: assume first option is correct (should not happen)
       normalizedOptions = q.options.map((opt: any, idx: number) => ({
         id: optionLetters[idx],
         text: typeof opt === 'string' ? opt : opt.text
@@ -87,67 +138,144 @@ function normalizeQuizResponse(data: any): QuizResponse {
       correctOption = 'A';
     }
     
-    // Ensure difficulty is normalized
-    const difficultyMap: { [key: string]: string } = {
-      'easy': 'kolay',
-      'medium': 'orta', 
-      'hard': 'zor'
+    const difficultyMap: Record<string, string> = {
+      'easy': 'kolay', 'medium': 'orta', 'hard': 'zor'
     };
     const difficulty = difficultyMap[q.difficulty?.toLowerCase()] || q.difficulty || 'orta';
-    
-    // Ensure points is a number
     const points = typeof q.points === 'number' ? q.points : 
-                   (difficulty === 'kolay' || difficulty === 'easy' ? 10 : 
-                    difficulty === 'orta' || difficulty === 'medium' ? 20 : 50);
-    
-    console.log(`[API] Question ${qIndex + 1}: correct_option = ${correctOption}, options =`, normalizedOptions.map(o => o.id));
+      (difficulty === 'kolay' ? 10 : difficulty === 'zor' ? 50 : 20);
     
     return {
       id: q.id || `q_${qIndex}`,
       text: q.text,
       options: normalizedOptions,
       correct_option: correctOption,
-      difficulty: difficulty,
-      points: points
+      difficulty,
+      points
     };
   });
   
   return {
     episode_id: data.episode_id,
-    episode_name: data.episode_name || `Bölüm ${data.episode_id}`,
-    questions: questions,
+    episode_name: data.episode_name || 'Quiz',
+    questions,
     total_questions: data.total_questions || questions.length,
-    max_possible_score: data.max_possible_score || questions.reduce((sum, q) => sum + q.points + 5, 0)
+    max_possible_score: data.max_possible_score || questions.reduce((sum, q) => sum + q.points + 5, 0),
+    mode: data.mode || 'episode'
   };
 }
 
-export async function startQuiz(episodeId: number, count: number = 20): Promise<QuizResponse> {
-  const response = await fetch(`${API_URL}/api/quiz/${episodeId}?count=${count}`);
+export async function getEpisodes(): Promise<Episode[]> {
+  const response = await fetch(`${API_URL}/api/episodes`);
+  if (!response.ok) throw new Error('Bölümler yüklenemedi');
+  return response.json();
+}
+
+export async function getEpisodeQuiz(episodeId: number): Promise<QuizResponse> {
+  const response = await fetch(`${API_URL}/api/quiz/episode/${episodeId}?count=25`);
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.detail || 'Failed to start quiz');
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.detail || 'Quiz yüklenemedi');
   }
   const data = await response.json();
-  console.log('[API] Raw quiz data received:', JSON.stringify(data).substring(0, 500));
   return normalizeQuizResponse(data);
 }
 
-export async function saveScore(episodeId: number, playerName: string, score: number): Promise<void> {
-  const response = await fetch(`${API_URL}/api/leaderboard`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ episode_id: episodeId, player_name: playerName, score }),
-  });
+export async function getMixedQuiz(): Promise<QuizResponse> {
+  const response = await fetch(`${API_URL}/api/quiz/mixed`);
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.detail || 'Failed to save score');
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.detail || 'Quiz yüklenemedi');
   }
+  const data = await response.json();
+  return normalizeQuizResponse(data);
 }
 
-export async function getLeaderboard(episodeId: number, playerName?: string): Promise<LeaderboardResponse> {
-  let url = `${API_URL}/api/leaderboard/${episodeId}`;
-  if (playerName) url += `?player_name=${encodeURIComponent(playerName)}`;
+export async function submitEpisodeScore(
+  episodeId: number,
+  score: number,
+  correctCount: number,
+  speedBonus: number
+): Promise<{ success: boolean; is_new_record: boolean; best_score: number }> {
+  const username = await getUsername();
+  if (!username) throw new Error('Kullanıcı adı bulunamadı');
+  
+  const response = await fetch(`${API_URL}/api/score/episode`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      player_name: username,
+      episode_id: episodeId,
+      score,
+      correct_count: correctCount,
+      speed_bonus: speedBonus
+    })
+  });
+  
+  if (!response.ok) throw new Error('Skor kaydedilemedi');
+  return response.json();
+}
+
+export async function submitMixedScore(
+  score: number,
+  correctCount: number,
+  speedBonus: number,
+  questionsAnswered: number
+): Promise<{ success: boolean; is_new_record: boolean; best_score: number }> {
+  const username = await getUsername();
+  if (!username) throw new Error('Kullanıcı adı bulunamadı');
+  
+  const response = await fetch(`${API_URL}/api/score/mixed`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      player_name: username,
+      score,
+      correct_count: correctCount,
+      speed_bonus: speedBonus,
+      questions_answered: questionsAnswered
+    })
+  });
+  
+  if (!response.ok) throw new Error('Skor kaydedilemedi');
+  return response.json();
+}
+
+export async function getGeneralLeaderboard(): Promise<LeaderboardResponse> {
+  const username = await getUsername();
+  let url = `${API_URL}/api/leaderboard/general`;
+  if (username) url += `?player_name=${encodeURIComponent(username)}`;
+  
   const response = await fetch(url);
-  if (!response.ok) throw new Error('Failed to fetch leaderboard');
+  if (!response.ok) throw new Error('Liderlik tablosu yüklenemedi');
+  return response.json();
+}
+
+export async function getEpisodeLeaderboard(episodeId: number): Promise<LeaderboardResponse> {
+  const username = await getUsername();
+  let url = `${API_URL}/api/leaderboard/episode/${episodeId}`;
+  if (username) url += `?player_name=${encodeURIComponent(username)}`;
+  
+  const response = await fetch(url);
+  if (!response.ok) throw new Error('Liderlik tablosu yüklenemedi');
+  return response.json();
+}
+
+export async function getMixedLeaderboard(): Promise<LeaderboardResponse> {
+  const username = await getUsername();
+  let url = `${API_URL}/api/leaderboard/mixed`;
+  if (username) url += `?player_name=${encodeURIComponent(username)}`;
+  
+  const response = await fetch(url);
+  if (!response.ok) throw new Error('Liderlik tablosu yüklenemedi');
+  return response.json();
+}
+
+export async function getPlayerStats(): Promise<PlayerStats | null> {
+  const username = await getUsername();
+  if (!username) return null;
+  
+  const response = await fetch(`${API_URL}/api/player/${encodeURIComponent(username)}/stats`);
+  if (!response.ok) return null;
   return response.json();
 }
