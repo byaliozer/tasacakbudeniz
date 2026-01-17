@@ -94,8 +94,8 @@ class LeaderboardResponse(BaseModel):
 async def fetch_csv_from_sheets(gid: str) -> str:
     """Fetch CSV data from Google Sheets"""
     url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv&gid={gid}"
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        response = await client.get(url)
+    async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as http_client:
+        response = await http_client.get(url)
         response.raise_for_status()
         return response.text
 
