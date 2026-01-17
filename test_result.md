@@ -171,15 +171,21 @@ frontend:
         
   - task: "Quiz Screen with Timer and Lives"
     implemented: true
-    working: true
+    working: false
     file: "/app/frontend/app/quiz/[id].tsx"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: true
         agent: "main"
         comment: "20s timer, 3 lives, correct/wrong feedback, super brain bonus, animations"
+      - working: false
+        agent: "user"
+        comment: "CRITICAL BUG: User reported via video that ALL answers are marked as correct - all buttons turn green regardless of which option is selected"
+      - working: false
+        agent: "main"
+        comment: "Fixed answer validation: Added string normalization with toUpperCase() for option.id and correct_option comparison to handle potential type/case mismatches"
         
   - task: "Result Screen with Score Save"
     implemented: true
