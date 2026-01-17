@@ -19,25 +19,39 @@ interface AdContextType {
 const AdContext = createContext<AdContextType | undefined>(undefined);
 
 export function AdProvider({ children }: { children: React.ReactNode }) {
-  const [isMobile] = useState(Platform.OS === 'ios' || Platform.OS === 'android');
+  const isMobile = Platform.OS === 'ios' || Platform.OS === 'android';
   const [isInterstitialReady, setIsInterstitialReady] = useState(false);
   const [isInterstitialLoading, setIsInterstitialLoading] = useState(false);
   const interstitialRef = useRef<any>(null);
+  const adsModuleRef = useRef<any>(null);
 
-  // Load interstitial ad on mobile
+  // Load interstitial ad on mobile only
   useEffect(() => {
     if (isMobile) {
-      loadInterstitial();
+      loadAdsModule();
     }
   }, [isMobile]);
 
-  const loadInterstitial = useCallback(async () => {
+  const loadAdsModule = async () => {
+    try {
+      // Dynamic import only on mobile
+      const adsModule = await import('react-native-google-mobile-ads');
+      adsModuleRef.current = adsModule;
+      loadInterstitial(adsModule);
+    } catch (error) {
+      console.log('AdMob module not available (expected on web):', error);
+    }
+  };
+
+  const loadInterstitial = useCallback(async (adsModule?: any) => {
     if (!isMobile) return;
+    
+    const module = adsModule || adsModuleRef.current;
+    if (!module) return;
     
     try {
       setIsInterstitialLoading(true);
-      // Dynamic import for mobile only
-      const { InterstitialAd, AdEventType } = await import('react-native-google-mobile-ads');
+      const { InterstitialAd, AdEventType } = module;
       
       const interstitial = InterstitialAd.createForAdRequest(ADMOB_CONFIG.INTERSTITIAL_ID, {
         keywords: ['quiz', 'game', 'entertainment', 'tv series'],
@@ -56,11 +70,11 @@ export function AdProvider({ children }: { children: React.ReactNode }) {
         loadInterstitial();
       });
       
-      const unsubscribeError = interstitial.addAdEventListener(AdEventType.ERROR, (error) => {
+      const unsubscribeError = interstitial.addAdEventListener(AdEventType.ERROR, (error: any) => {
         console.log('Interstitial ad error:', error);
         setIsInterstitialLoading(false);
         // Retry after delay
-        setTimeout(loadInterstitial, 30000);
+        setTimeout(() => loadInterstitial(), 30000);
       });
       
       interstitial.load();
@@ -71,7 +85,7 @@ export function AdProvider({ children }: { children: React.ReactNode }) {
         unsubscribeError();
       };
     } catch (error) {
-      console.log('AdMob not available:', error);
+      console.log('Error loading interstitial:', error);
       setIsInterstitialLoading(false);
     }
   }, [isMobile]);
