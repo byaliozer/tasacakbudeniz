@@ -143,6 +143,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "COMPREHENSIVE TESTING COMPLETED: All 17 tests passed. Verified correct_option format (A,B,C,D), options array structure (4 items with proper IDs), correct_option matches options array, answer validation logic works correctly. Tested with episodes 1&2, different question counts (1,2,3,5). Quiz API functioning perfectly."
+      - working: true
+        agent: "testing"
+        comment: "ANSWER VALIDATION BUG INVESTIGATION COMPLETED: Ran 16 comprehensive tests focusing on the reported 'all answers marked correct' bug. ALL TESTS PASSED. Backend API is returning correct data structure: correct_option is always A/B/C/D string, options array has exactly 4 items with proper IDs, correct_option matches option IDs, answer validation logic works correctly. Tested specific endpoints /api/quiz/1?count=5 and /api/quiz/2?count=3 as requested. Randomization works with data integrity maintained. NO BACKEND ISSUES found - the bug is likely in frontend answer validation logic."
         
   - task: "Leaderboard API - Save and Retrieve Scores"
     implemented: true
