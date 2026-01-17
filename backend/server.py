@@ -11,7 +11,6 @@ import uuid
 from datetime import datetime
 import httpx
 import random
-import asyncio
 from cachetools import TTLCache
 
 ROOT_DIR = Path(__file__).parent
@@ -48,7 +47,7 @@ logger = logging.getLogger(__name__)
 class Episode(BaseModel):
     id: int
     name: str
-    question_count: int = 0
+    question_count: int = 25
     is_locked: bool = False
     description: str = ""
 
@@ -65,28 +64,37 @@ class Question(BaseModel):
     points: int
 
 class QuizResponse(BaseModel):
-    episode_id: int
+    episode_id: Optional[int] = None
     episode_name: str
     questions: List[Question]
     total_questions: int
     max_possible_score: int
+    mode: str = "episode"  # "episode" or "mixed"
 
+# Score submission models
+class ScoreSubmit(BaseModel):
+    player_name: str
+    score: int
+    correct_count: int = 0
+    speed_bonus: int = 0
+
+class EpisodeScoreSubmit(ScoreSubmit):
+    episode_id: int
+
+class MixedScoreSubmit(ScoreSubmit):
+    questions_answered: int = 0
+
+# Leaderboard response models
 class LeaderboardEntry(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    episode_id: int
+    rank: int
     player_name: str
     score: int
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
-
-class LeaderboardCreate(BaseModel):
-    episode_id: int
-    player_name: str
-    score: int
+    timestamp: Optional[datetime] = None
 
 class LeaderboardResponse(BaseModel):
-    top_10: List[Dict[str, Any]]
+    entries: List[Dict[str, Any]]
     player_rank: Optional[int] = None
-    player_entry: Optional[Dict[str, Any]] = None
+    player_score: Optional[int] = None
     total_players: int = 0
 
 # === GOOGLE SHEETS FUNCTIONS ===
@@ -99,29 +107,38 @@ async def fetch_csv_from_sheets(gid: str) -> str:
         response.raise_for_status()
         return response.text
 
-def parse_csv(csv_text: str) -> List[List[str]]:
-    """Parse CSV text into rows"""
+def parse_csv(csv_text: str) -> List[Dict[str, str]]:
+    """Parse CSV text into list of dictionaries"""
     lines = csv_text.strip().split('\n')
+    if len(lines) < 2:
+        return []
+    
+    headers = [h.strip().lower().replace(' ', '_') for h in lines[0].split(',')]
     rows = []
-    for line in lines:
-        # Simple CSV parsing - handles basic cases
-        cells = []
-        current_cell = ""
+    
+    for line in lines[1:]:
+        values = []
+        current = ""
         in_quotes = False
+        
         for char in line:
             if char == '"':
                 in_quotes = not in_quotes
             elif char == ',' and not in_quotes:
-                cells.append(current_cell.strip())
-                current_cell = ""
+                values.append(current.strip())
+                current = ""
             else:
-                current_cell += char
-        cells.append(current_cell.strip())
-        rows.append(cells)
+                current += char
+        values.append(current.strip())
+        
+        if len(values) >= len(headers):
+            row = {headers[i]: values[i] for i in range(len(headers))}
+            rows.append(row)
+    
     return rows
 
-async def get_episodes_from_sheets() -> List[Episode]:
-    """Fetch and parse episodes from Google Sheets"""
+async def get_episodes_data() -> List[Episode]:
+    """Get episodes from Google Sheets with caching"""
     cache_key = "episodes"
     if cache_key in cache:
         return cache[cache_key]
@@ -131,35 +148,38 @@ async def get_episodes_from_sheets() -> List[Episode]:
         rows = parse_csv(csv_text)
         
         episodes = []
-        # Skip header row
-        for row in rows[1:]:
-            if len(row) >= 4:
-                try:
-                    episode_id = int(row[0]) if row[0].isdigit() else 0
-                    if episode_id > 0:
-                        episodes.append(Episode(
-                            id=episode_id,
-                            name=row[1].strip('"') if row[1] else f"{episode_id}. Bölüm",
-                            is_locked=row[2].strip('"').lower() != "açık" if len(row) > 2 else True,
-                            description=row[3].strip('"') if len(row) > 3 else ""
-                        ))
-                except (ValueError, IndexError) as e:
-                    logger.warning(f"Error parsing episode row: {row}, error: {e}")
-                    continue
+        for row in rows:
+            try:
+                episode = Episode(
+                    id=int(row.get('episode_id', row.get('id', 0))),
+                    name=row.get('episode_name', row.get('name', f"Bölüm {row.get('id', '?')}")),
+                    question_count=25,
+                    is_locked=row.get('is_locked', 'false').lower() == 'true',
+                    description=row.get('description', '')
+                )
+                episodes.append(episode)
+            except Exception as e:
+                logger.warning(f"Error parsing episode row: {e}")
+                continue
         
-        # Get question counts
-        questions = await get_questions_from_sheets()
-        for episode in episodes:
-            episode.question_count = len([q for q in questions if q.get('episode_id') == episode.id])
+        # Ensure we have 14 episodes
+        while len(episodes) < 14:
+            episodes.append(Episode(
+                id=len(episodes) + 1,
+                name=f"{len(episodes) + 1}. Bölüm",
+                question_count=25,
+                is_locked=False
+            ))
         
-        cache[cache_key] = episodes
-        return episodes
+        cache[cache_key] = episodes[:14]
+        return episodes[:14]
     except Exception as e:
         logger.error(f"Error fetching episodes: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to fetch episodes: {str(e)}")
+        # Return default 14 episodes
+        return [Episode(id=i, name=f"{i}. Bölüm", question_count=25) for i in range(1, 15)]
 
-async def get_questions_from_sheets() -> List[Dict]:
-    """Fetch and parse questions from Google Sheets"""
+async def get_questions_data() -> Dict[int, List[Dict]]:
+    """Get all questions from Google Sheets with caching"""
     cache_key = "questions"
     if cache_key in cache:
         return cache[cache_key]
@@ -168,197 +188,462 @@ async def get_questions_from_sheets() -> List[Dict]:
         csv_text = await fetch_csv_from_sheets(QUESTIONS_GID)
         rows = parse_csv(csv_text)
         
-        questions = []
-        # Skip header row: Bölüm | Soru ID | Soru | A | B | C | D | Doğru Cevap | Zorluk | Puan
-        for row in rows[1:]:
-            if len(row) >= 10:
-                try:
-                    episode_id = int(row[0]) if row[0].isdigit() else 0
-                    if episode_id > 0:
-                        # Map difficulty to points
-                        difficulty = row[8].strip('"').lower() if len(row) > 8 else "kolay"
-                        points_str = row[9].strip('"') if len(row) > 9 else ""
-                        
-                        if points_str.isdigit():
-                            points = int(points_str)
-                        else:
-                            # Default points based on difficulty
-                            difficulty_points = {"kolay": 10, "orta": 20, "zor": 50, "easy": 10, "medium": 20, "hard": 50}
-                            points = difficulty_points.get(difficulty, 10)
-                        
-                        questions.append({
-                            "episode_id": episode_id,
-                            "id": row[1].strip('"'),
-                            "text": row[2].strip('"'),
-                            "options": {
-                                "A": row[3].strip('"'),
-                                "B": row[4].strip('"'),
-                                "C": row[5].strip('"'),
-                                "D": row[6].strip('"')
-                            },
-                            "correct_answer": row[7].strip('"').upper(),
-                            "difficulty": difficulty,
-                            "points": points
-                        })
-                except (ValueError, IndexError) as e:
-                    logger.warning(f"Error parsing question row: {row}, error: {e}")
-                    continue
+        questions_by_episode: Dict[int, List[Dict]] = {}
         
-        cache[cache_key] = questions
-        return questions
+        for row in rows:
+            try:
+                episode_id = int(row.get('episode_id', row.get('episode', 1)))
+                
+                difficulty = row.get('difficulty', 'orta').lower()
+                if difficulty in ['easy', 'kolay']:
+                    points = 10
+                    difficulty = 'kolay'
+                elif difficulty in ['hard', 'zor']:
+                    points = 50
+                    difficulty = 'zor'
+                else:
+                    points = 20
+                    difficulty = 'orta'
+                
+                question = {
+                    'id': row.get('question_id', row.get('id', str(uuid.uuid4()))),
+                    'text': row.get('question', row.get('text', '')),
+                    'options': {
+                        'A': row.get('option_a', row.get('a', '')),
+                        'B': row.get('option_b', row.get('b', '')),
+                        'C': row.get('option_c', row.get('c', '')),
+                        'D': row.get('option_d', row.get('d', ''))
+                    },
+                    'correct_answer': row.get('correct_answer', row.get('correct', 'A')).upper(),
+                    'difficulty': difficulty,
+                    'points': points,
+                    'episode_id': episode_id
+                }
+                
+                if question['text']:
+                    if episode_id not in questions_by_episode:
+                        questions_by_episode[episode_id] = []
+                    questions_by_episode[episode_id].append(question)
+            except Exception as e:
+                logger.warning(f"Error parsing question row: {e}")
+                continue
+        
+        cache[cache_key] = questions_by_episode
+        return questions_by_episode
     except Exception as e:
         logger.error(f"Error fetching questions: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to fetch questions: {str(e)}")
+        return {}
 
-# === API ROUTES ===
+def transform_question(q: Dict) -> Question:
+    """Transform a raw question dict to Question model with shuffled options"""
+    option_keys = ['A', 'B', 'C', 'D']
+    options_list = [(key, q['options'][key]) for key in option_keys if q['options'].get(key)]
+    random.shuffle(options_list)
+    
+    correct_text = q['options'].get(q['correct_answer'], '')
+    correct_id = 'A'
+    for i, (_, text) in enumerate(options_list):
+        if text == correct_text:
+            correct_id = option_keys[i]
+            break
+    
+    return Question(
+        id=q['id'],
+        text=q['text'],
+        options=[QuestionOption(id=option_keys[i], text=text) for i, (_, text) in enumerate(options_list)],
+        correct_option=correct_id,
+        difficulty=q['difficulty'],
+        points=q['points']
+    )
+
+# === API ENDPOINTS ===
 
 @api_router.get("/")
 async def root():
-    return {"message": "Taşacak Bu Deniz Quiz API", "status": "running"}
+    return {"message": "Taşacak Bu Deniz Quiz API", "version": "2.0"}
 
 @api_router.get("/episodes", response_model=List[Episode])
 async def get_episodes():
-    """Get all episodes with their status"""
-    return await get_episodes_from_sheets()
+    """Get all 14 episodes"""
+    return await get_episodes_data()
 
-@api_router.get("/quiz/{episode_id}", response_model=QuizResponse)
-async def start_quiz(episode_id: int, count: int = 20):
-    """Start a quiz for a specific episode"""
-    episodes = await get_episodes_from_sheets()
-    episode = next((e for e in episodes if e.id == episode_id), None)
+@api_router.get("/quiz/episode/{episode_id}", response_model=QuizResponse)
+async def get_episode_quiz(episode_id: int, count: int = 25):
+    """Get quiz questions for a specific episode (25 questions)"""
+    if episode_id < 1 or episode_id > 14:
+        raise HTTPException(status_code=400, detail="Geçersiz bölüm ID (1-14)")
     
-    if not episode:
-        raise HTTPException(status_code=404, detail="Episode not found")
-    
-    if episode.is_locked:
-        raise HTTPException(status_code=403, detail="Bu bölüm henüz açılmadı")
-    
-    all_questions = await get_questions_from_sheets()
-    episode_questions = [q for q in all_questions if q.get('episode_id') == episode_id]
+    questions_data = await get_questions_data()
+    episode_questions = questions_data.get(episode_id, [])
     
     if not episode_questions:
         raise HTTPException(status_code=404, detail="Bu bölüm için soru bulunamadı")
     
-    # Select random questions (up to count)
-    selected = random.sample(episode_questions, min(count, len(episode_questions)))
+    # Select up to 25 questions
+    selected = random.sample(episode_questions, min(count, len(episode_questions), 25))
     
-    # Transform questions and shuffle options
-    quiz_questions = []
-    max_score = 0
+    quiz_questions = [transform_question(q) for q in selected]
+    max_score = sum(q.points for q in quiz_questions) + (len(quiz_questions) * 5)  # Include speed bonus
     
-    for q in selected:
-        # Create shuffled options
-        option_keys = ['A', 'B', 'C', 'D']
-        options_list = [(key, q['options'][key]) for key in option_keys if q['options'].get(key)]
-        random.shuffle(options_list)
-        
-        # Find new position of correct answer
-        correct_text = q['options'].get(q['correct_answer'], '')
-        correct_id = 'A'
-        for i, (_, text) in enumerate(options_list):
-            if text == correct_text:
-                correct_id = option_keys[i]
-                break
-        
-        quiz_questions.append(Question(
-            id=q['id'],
-            text=q['text'],
-            options=[QuestionOption(id=option_keys[i], text=text) for i, (_, text) in enumerate(options_list)],
-            correct_option=correct_id,
-            difficulty=q['difficulty'],
-            points=q['points']
-        ))
-        max_score += q['points'] + 5  # Include potential bonus
+    episodes = await get_episodes_data()
+    episode = next((e for e in episodes if e.id == episode_id), None)
     
     return QuizResponse(
         episode_id=episode_id,
-        episode_name=episode.name,
+        episode_name=episode.name if episode else f"{episode_id}. Bölüm",
         questions=quiz_questions,
         total_questions=len(quiz_questions),
-        max_possible_score=max_score
+        max_possible_score=max_score,
+        mode="episode"
     )
 
-@api_router.post("/leaderboard", response_model=LeaderboardEntry)
-async def save_score(entry: LeaderboardCreate):
-    """Save a player's score to the leaderboard"""
-    if not entry.player_name or len(entry.player_name.strip()) == 0:
-        raise HTTPException(status_code=400, detail="Player name is required")
+@api_router.get("/quiz/mixed", response_model=QuizResponse)
+async def get_mixed_quiz():
+    """Get mixed quiz with all questions from all episodes (endless mode)"""
+    questions_data = await get_questions_data()
     
-    if len(entry.player_name) > 15:
-        raise HTTPException(status_code=400, detail="Player name must be 15 characters or less")
+    all_questions = []
+    for episode_questions in questions_data.values():
+        all_questions.extend(episode_questions)
     
-    leaderboard_entry = LeaderboardEntry(
-        episode_id=entry.episode_id,
-        player_name=entry.player_name.strip(),
-        score=entry.score
+    if not all_questions:
+        raise HTTPException(status_code=404, detail="Soru bulunamadı")
+    
+    # Shuffle all questions
+    random.shuffle(all_questions)
+    
+    quiz_questions = [transform_question(q) for q in all_questions]
+    max_score = sum(q.points for q in quiz_questions) + (len(quiz_questions) * 5)
+    
+    return QuizResponse(
+        episode_id=None,
+        episode_name="Karışık Mod",
+        questions=quiz_questions,
+        total_questions=len(quiz_questions),
+        max_possible_score=max_score,
+        mode="mixed"
     )
-    
-    await db.leaderboard.insert_one(leaderboard_entry.dict())
-    return leaderboard_entry
 
-@api_router.get("/leaderboard/{episode_id}", response_model=LeaderboardResponse)
-async def get_leaderboard(episode_id: int, player_name: Optional[str] = None):
-    """Get leaderboard for a specific episode"""
-    # Get all entries for this episode, sorted by score descending
-    cursor = db.leaderboard.find(
-        {"episode_id": episode_id}
-    ).sort("score", -1)
+# === SCORE & LEADERBOARD ENDPOINTS ===
+
+@api_router.post("/score/episode")
+async def submit_episode_score(data: EpisodeScoreSubmit):
+    """Submit score for episode mode - keeps best score only"""
+    collection = db.episode_scores
     
-    all_entries = await cursor.to_list(length=1000)
-    total_players = len(all_entries)
+    # Check if player has existing score for this episode
+    existing = await collection.find_one({
+        "player_name": data.player_name,
+        "episode_id": data.episode_id
+    })
     
-    # Get top 10
-    top_10 = []
-    for i, entry in enumerate(all_entries[:10]):
-        top_10.append({
+    is_new_record = False
+    
+    if existing:
+        # Update only if new score is higher
+        if data.score > existing.get("score", 0):
+            await collection.update_one(
+                {"_id": existing["_id"]},
+                {"$set": {
+                    "score": data.score,
+                    "correct_count": data.correct_count,
+                    "speed_bonus": data.speed_bonus,
+                    "timestamp": datetime.utcnow()
+                }}
+            )
+            is_new_record = True
+    else:
+        # Insert new score
+        await collection.insert_one({
+            "id": str(uuid.uuid4()),
+            "player_name": data.player_name,
+            "episode_id": data.episode_id,
+            "score": data.score,
+            "correct_count": data.correct_count,
+            "speed_bonus": data.speed_bonus,
+            "timestamp": datetime.utcnow()
+        })
+        is_new_record = True
+    
+    # Update global score
+    await update_global_score(data.player_name)
+    
+    # Get player's best for this episode
+    best = await collection.find_one({
+        "player_name": data.player_name,
+        "episode_id": data.episode_id
+    })
+    
+    return {
+        "success": True,
+        "is_new_record": is_new_record,
+        "best_score": best.get("score", data.score) if best else data.score
+    }
+
+@api_router.post("/score/mixed")
+async def submit_mixed_score(data: MixedScoreSubmit):
+    """Submit score for mixed mode - keeps best run only"""
+    collection = db.mixed_scores
+    
+    # Check if player has existing score
+    existing = await collection.find_one({"player_name": data.player_name})
+    
+    is_new_record = False
+    
+    if existing:
+        # Update only if new score is higher
+        if data.score > existing.get("score", 0):
+            await collection.update_one(
+                {"_id": existing["_id"]},
+                {"$set": {
+                    "score": data.score,
+                    "correct_count": data.correct_count,
+                    "speed_bonus": data.speed_bonus,
+                    "questions_answered": data.questions_answered,
+                    "timestamp": datetime.utcnow()
+                }}
+            )
+            is_new_record = True
+    else:
+        # Insert new score
+        await collection.insert_one({
+            "id": str(uuid.uuid4()),
+            "player_name": data.player_name,
+            "score": data.score,
+            "correct_count": data.correct_count,
+            "speed_bonus": data.speed_bonus,
+            "questions_answered": data.questions_answered,
+            "timestamp": datetime.utcnow()
+        })
+        is_new_record = True
+    
+    # Get player's best
+    best = await collection.find_one({"player_name": data.player_name})
+    
+    return {
+        "success": True,
+        "is_new_record": is_new_record,
+        "best_score": best.get("score", data.score) if best else data.score
+    }
+
+async def update_global_score(player_name: str):
+    """Calculate and update global score (sum of all episode best scores)"""
+    episode_collection = db.episode_scores
+    global_collection = db.global_scores
+    
+    # Get all episode scores for this player
+    cursor = episode_collection.find({"player_name": player_name})
+    episode_scores = await cursor.to_list(length=100)
+    
+    # Calculate total
+    total_score = sum(s.get("score", 0) for s in episode_scores)
+    episodes_completed = len(episode_scores)
+    
+    # Update or insert global score
+    await global_collection.update_one(
+        {"player_name": player_name},
+        {"$set": {
+            "score": total_score,
+            "episodes_completed": episodes_completed,
+            "timestamp": datetime.utcnow()
+        }},
+        upsert=True
+    )
+
+@api_router.get("/leaderboard/general", response_model=LeaderboardResponse)
+async def get_general_leaderboard(player_name: Optional[str] = None):
+    """Get general leaderboard (sum of episode best scores)"""
+    collection = db.global_scores
+    
+    # Get top 50
+    cursor = collection.find().sort("score", -1).limit(50)
+    entries = await cursor.to_list(length=50)
+    
+    # Get total count
+    total = await collection.count_documents({})
+    
+    # Format entries
+    formatted = []
+    for i, entry in enumerate(entries):
+        formatted.append({
             "rank": i + 1,
-            "player_name": entry["player_name"],
-            "score": entry["score"],
-            "timestamp": entry.get("timestamp", datetime.utcnow()).isoformat()
+            "player_name": entry.get("player_name", "Anonim"),
+            "score": entry.get("score", 0),
+            "episodes_completed": entry.get("episodes_completed", 0)
         })
     
-    # Find player's rank if name provided
+    # Find player rank
     player_rank = None
-    player_entry = None
-    
+    player_score = None
     if player_name:
-        for i, entry in enumerate(all_entries):
-            if entry["player_name"].lower() == player_name.lower():
-                player_rank = i + 1
-                player_entry = {
-                    "rank": player_rank,
-                    "player_name": entry["player_name"],
-                    "score": entry["score"],
-                    "timestamp": entry.get("timestamp", datetime.utcnow()).isoformat()
-                }
-                break
+        player_entry = await collection.find_one({"player_name": player_name})
+        if player_entry:
+            player_score = player_entry.get("score", 0)
+            # Count how many have higher scores
+            higher_count = await collection.count_documents({"score": {"$gt": player_score}})
+            player_rank = higher_count + 1
     
     return LeaderboardResponse(
-        top_10=top_10,
+        entries=formatted,
         player_rank=player_rank,
-        player_entry=player_entry,
-        total_players=total_players
+        player_score=player_score,
+        total_players=total
     )
 
-@api_router.get("/refresh-cache")
-async def refresh_cache():
-    """Force refresh the cache"""
-    cache.clear()
-    # Pre-fetch data to warm up cache
-    await get_episodes_from_sheets()
-    await get_questions_from_sheets()
-    return {"message": "Cache refreshed successfully"}
+@api_router.get("/leaderboard/episode/{episode_id}", response_model=LeaderboardResponse)
+async def get_episode_leaderboard(episode_id: int, player_name: Optional[str] = None):
+    """Get leaderboard for specific episode"""
+    if episode_id < 1 or episode_id > 14:
+        raise HTTPException(status_code=400, detail="Geçersiz bölüm ID")
+    
+    collection = db.episode_scores
+    
+    # Get top 50 for this episode
+    cursor = collection.find({"episode_id": episode_id}).sort("score", -1).limit(50)
+    entries = await cursor.to_list(length=50)
+    
+    # Get total count
+    total = await collection.count_documents({"episode_id": episode_id})
+    
+    # Format entries
+    formatted = []
+    for i, entry in enumerate(entries):
+        formatted.append({
+            "rank": i + 1,
+            "player_name": entry.get("player_name", "Anonim"),
+            "score": entry.get("score", 0)
+        })
+    
+    # Find player rank
+    player_rank = None
+    player_score = None
+    if player_name:
+        player_entry = await collection.find_one({
+            "player_name": player_name,
+            "episode_id": episode_id
+        })
+        if player_entry:
+            player_score = player_entry.get("score", 0)
+            higher_count = await collection.count_documents({
+                "episode_id": episode_id,
+                "score": {"$gt": player_score}
+            })
+            player_rank = higher_count + 1
+    
+    return LeaderboardResponse(
+        entries=formatted,
+        player_rank=player_rank,
+        player_score=player_score,
+        total_players=total
+    )
 
-# Include the router in the main app
+@api_router.get("/leaderboard/mixed", response_model=LeaderboardResponse)
+async def get_mixed_leaderboard(player_name: Optional[str] = None):
+    """Get mixed mode leaderboard"""
+    collection = db.mixed_scores
+    
+    # Get top 50
+    cursor = collection.find().sort("score", -1).limit(50)
+    entries = await cursor.to_list(length=50)
+    
+    # Get total count
+    total = await collection.count_documents({})
+    
+    # Format entries
+    formatted = []
+    for i, entry in enumerate(entries):
+        formatted.append({
+            "rank": i + 1,
+            "player_name": entry.get("player_name", "Anonim"),
+            "score": entry.get("score", 0),
+            "questions_answered": entry.get("questions_answered", 0)
+        })
+    
+    # Find player rank
+    player_rank = None
+    player_score = None
+    if player_name:
+        player_entry = await collection.find_one({"player_name": player_name})
+        if player_entry:
+            player_score = player_entry.get("score", 0)
+            higher_count = await collection.count_documents({"score": {"$gt": player_score}})
+            player_rank = higher_count + 1
+    
+    return LeaderboardResponse(
+        entries=formatted,
+        player_rank=player_rank,
+        player_score=player_score,
+        total_players=total
+    )
+
+@api_router.get("/player/{player_name}/stats")
+async def get_player_stats(player_name: str):
+    """Get player statistics"""
+    # Get episode scores
+    episode_cursor = db.episode_scores.find({"player_name": player_name})
+    episode_scores = await episode_cursor.to_list(length=100)
+    
+    # Get mixed score
+    mixed_score = await db.mixed_scores.find_one({"player_name": player_name})
+    
+    # Get global score
+    global_score = await db.global_scores.find_one({"player_name": player_name})
+    
+    return {
+        "player_name": player_name,
+        "global_score": global_score.get("score", 0) if global_score else 0,
+        "episodes_completed": len(episode_scores),
+        "episode_scores": {s["episode_id"]: s["score"] for s in episode_scores},
+        "mixed_best_score": mixed_score.get("score", 0) if mixed_score else 0
+    }
+
+# Legacy endpoint for backward compatibility
+@api_router.post("/leaderboard")
+async def legacy_save_score(data: dict):
+    """Legacy endpoint - redirects to new episode score"""
+    episode_id = data.get("episode_id", 1)
+    player_name = data.get("player_name", "Anonim")
+    score = data.get("score", 0)
+    
+    return await submit_episode_score(EpisodeScoreSubmit(
+        episode_id=episode_id,
+        player_name=player_name,
+        score=score
+    ))
+
+@api_router.get("/leaderboard/{episode_id}")
+async def legacy_get_leaderboard(episode_id: int, player_name: Optional[str] = None):
+    """Legacy endpoint - redirects to episode leaderboard"""
+    result = await get_episode_leaderboard(episode_id, player_name)
+    # Convert to old format
+    return {
+        "top_10": result.entries[:10],
+        "player_rank": result.player_rank,
+        "player_entry": {"score": result.player_score} if result.player_score else None,
+        "total_players": result.total_players
+    }
+
+# Include router and setup CORS
 app.include_router(api_router)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_credentials=True,
     allow_origins=["*"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.on_event("startup")
+async def startup_db_client():
+    logger.info("Starting up - connecting to MongoDB")
+    # Create indexes
+    await db.episode_scores.create_index([("player_name", 1), ("episode_id", 1)], unique=True)
+    await db.episode_scores.create_index([("episode_id", 1), ("score", -1)])
+    await db.mixed_scores.create_index("player_name", unique=True)
+    await db.mixed_scores.create_index([("score", -1)])
+    await db.global_scores.create_index("player_name", unique=True)
+    await db.global_scores.create_index([("score", -1)])
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
