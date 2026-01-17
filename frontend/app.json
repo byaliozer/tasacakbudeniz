@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Taşacak Bu Deniz Quiz",
+    "name": "Taşacak Bu Deniz",
     "slug": "tasacak-bu-deniz-quiz",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -10,7 +10,7 @@
     "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.tasacakbudeniz.quiz",
+      "bundleIdentifier": "com.byaliozer.tasacakbudeniz",
       "infoPlist": {
         "GADApplicationIdentifier": "ca-app-pub-9873123247401502~2062931178",
         "SKAdNetworkItems": [
