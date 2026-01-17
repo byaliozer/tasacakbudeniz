@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { BannerAd as GoogleBannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
-import { ADMOB_CONFIG } from '../context/AdContext';
+
+// AdMob Banner ID - hardcoded to avoid import issues
+const BANNER_AD_UNIT_ID = 'ca-app-pub-9873123247401502/9749849505';
 
 interface BannerAdProps {
   style?: object;
@@ -10,6 +12,7 @@ interface BannerAdProps {
 // Native version - real AdMob ads
 export function BannerAd({ style }: BannerAdProps) {
   const [error, setError] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
   if (error) {
     return (
@@ -22,13 +25,14 @@ export function BannerAd({ style }: BannerAdProps) {
   return (
     <View style={[styles.container, style]}>
       <GoogleBannerAd
-        unitId={ADMOB_CONFIG.BANNER_ID}
-        size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+        unitId={BANNER_AD_UNIT_ID}
+        size={BannerAdSize.BANNER}
         requestOptions={{
           requestNonPersonalizedAdsOnly: true,
         }}
         onAdLoaded={() => {
           console.log('[BannerAd] Loaded successfully');
+          setLoaded(true);
         }}
         onAdFailedToLoad={(err) => {
           console.warn('[BannerAd] Failed to load:', err);
@@ -45,6 +49,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#fff',
     minHeight: 50,
+    width: '100%',
   },
   placeholder: {
     height: 50,
