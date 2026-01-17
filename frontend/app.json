@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Taşacak Bu Deniz",
-    "slug": "tasacak-bu-deniz-quiz",
+    "slug": "tasacakbudeniz",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -70,6 +70,9 @@
       "eas": {
         "projectId": "324a8eb7-ed42-4b85-9462-a7768d07f0ec"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     }
   }
 }
