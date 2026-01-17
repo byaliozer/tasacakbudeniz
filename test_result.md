@@ -231,7 +231,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Full quiz flow testing"
+    - "Quiz Screen answer validation bug fix verification"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -241,3 +241,5 @@ agent_communication:
     message: "MVP complete - All core features implemented and manually tested"
   - agent: "testing"
     message: "QUIZ API TESTING COMPLETED SUCCESSFULLY: Comprehensive testing of Quiz API correct_option functionality completed. All 17 tests passed including: correct_option format validation (A,B,C,D), options array structure verification (4 items with proper IDs), correct_option matching with options array, answer validation logic, and quiz data completeness. Tested multiple episodes and question counts. Quiz API is working perfectly - no issues found."
+  - agent: "main"
+    message: "CRITICAL BUG FIX: User reported ALL answers showing as correct. Fixed by adding string normalization (toUpperCase/trim) for option ID comparisons in both handleAnswer function and options rendering. The issue was likely a type or case mismatch between option.id and correct_option values. Please verify backend API returns correct data format."
