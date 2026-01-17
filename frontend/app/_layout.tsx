@@ -1,3 +1,4 @@
+import React from 'react';
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -14,7 +15,6 @@ export default function RootLayout() {
             screenOptions={{
               headerShown: false,
               contentStyle: { backgroundColor: "#1CB0F6" },
-              animation: "slide_from_right",
             }}
           />
         </SoundProvider>
