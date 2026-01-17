@@ -201,13 +201,23 @@ async def get_questions_data() -> Dict[int, List[Dict]]:
         csv_text = await fetch_csv_from_sheets(QUESTIONS_GID)
         rows = parse_csv(csv_text)
         
+        logger.info(f"Parsed {len(rows)} question rows")
+        if rows:
+            logger.info(f"First question row keys: {list(rows[0].keys())}")
+        
         questions_by_episode: Dict[int, List[Dict]] = {}
         
         for row in rows:
             try:
-                episode_id = int(row.get('episode_id', row.get('episode', 1)))
+                # Try different column name variations for episode
+                episode_id = int(
+                    row.get('episode_id') or row.get('episode') or 
+                    row.get('bölüm') or row.get('bolum') or 1
+                )
                 
-                difficulty = row.get('difficulty', 'orta').lower()
+                # Try different column names for difficulty and points
+                difficulty_raw = row.get('difficulty') or row.get('zorluk') or 'orta'
+                difficulty = difficulty_raw.lower()
                 if difficulty in ['easy', 'kolay']:
                     points = 10
                     difficulty = 'kolay'
@@ -218,28 +228,46 @@ async def get_questions_data() -> Dict[int, List[Dict]]:
                     points = 20
                     difficulty = 'orta'
                 
+                # Override with explicit points if provided
+                if row.get('points') or row.get('puan'):
+                    try:
+                        points = int(row.get('points') or row.get('puan'))
+                    except:
+                        pass
+                
+                # Get correct answer - try different column names
+                correct_raw = (
+                    row.get('correct_answer') or row.get('correct') or 
+                    row.get('doğru_cevap') or row.get('dogru_cevap') or 'A'
+                )
+                correct_answer = correct_raw.strip().upper()
+                
                 question = {
-                    'id': row.get('question_id', row.get('id', str(uuid.uuid4()))),
-                    'text': row.get('question', row.get('text', '')),
+                    'id': row.get('question_id') or row.get('id') or row.get('soru_id') or str(uuid.uuid4()),
+                    'text': row.get('question') or row.get('text') or row.get('soru') or '',
                     'options': {
-                        'A': row.get('option_a', row.get('a', '')),
-                        'B': row.get('option_b', row.get('b', '')),
-                        'C': row.get('option_c', row.get('c', '')),
-                        'D': row.get('option_d', row.get('d', ''))
+                        'A': row.get('option_a') or row.get('a') or '',
+                        'B': row.get('option_b') or row.get('b') or '',
+                        'C': row.get('option_c') or row.get('c') or '',
+                        'D': row.get('option_d') or row.get('d') or ''
                     },
-                    'correct_answer': row.get('correct_answer', row.get('correct', 'A')).upper(),
+                    'correct_answer': correct_answer,
                     'difficulty': difficulty,
                     'points': points,
                     'episode_id': episode_id
                 }
                 
-                if question['text']:
+                if question['text'] and any(question['options'].values()):
                     if episode_id not in questions_by_episode:
                         questions_by_episode[episode_id] = []
                     questions_by_episode[episode_id].append(question)
             except Exception as e:
-                logger.warning(f"Error parsing question row: {e}")
+                logger.warning(f"Error parsing question row: {e}, row: {row}")
                 continue
+        
+        logger.info(f"Loaded questions for episodes: {list(questions_by_episode.keys())}")
+        for ep, qs in questions_by_episode.items():
+            logger.info(f"Episode {ep}: {len(qs)} questions")
         
         cache[cache_key] = questions_by_episode
         return questions_by_episode
