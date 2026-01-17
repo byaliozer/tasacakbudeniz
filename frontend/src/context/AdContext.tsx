@@ -1,39 +1,36 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
-import { Platform } from 'react-native';
+import React, { createContext, useContext, useCallback } from 'react';
 
-// AdMob IDs
+/**
+ * AdMob Configuration
+ * Bu ID'ler production build'de kullanılacak
+ */
 export const ADMOB_CONFIG = {
+  APP_ID: 'ca-app-pub-9873123247401502~2062931178',
   BANNER_ID: 'ca-app-pub-9873123247401502/9749849505',
   INTERSTITIAL_ID: 'ca-app-pub-9873123247401502/6521050938',
 };
 
 interface AdContextType {
-  isMobile: boolean;
+  showInterstitial: () => Promise<void>;
   bannerAdId: string;
   interstitialAdId: string;
-  showInterstitial: () => Promise<void>;
-  isInterstitialReady: boolean;
 }
 
 const AdContext = createContext<AdContextType | undefined>(undefined);
 
 export function AdProvider({ children }: { children: React.ReactNode }) {
-  const isMobile = Platform.OS === 'ios' || Platform.OS === 'android';
-  const [isInterstitialReady] = useState(false);
-
+  
   const showInterstitial = useCallback(async () => {
-    // This is a placeholder for web
-    // Real implementation happens in native mobile app
-    console.log('[Ad] Interstitial reklam gösterilecek (mobil cihazda)');
+    // Expo Go'da sadece console log
+    // Production build'de gerçek reklam gösterilecek
+    console.log('[AdMob] Geçiş reklamı gösterilecek');
   }, []);
 
   return (
     <AdContext.Provider value={{
-      isMobile,
+      showInterstitial,
       bannerAdId: ADMOB_CONFIG.BANNER_ID,
       interstitialAdId: ADMOB_CONFIG.INTERSTITIAL_ID,
-      showInterstitial,
-      isInterstitialReady,
     }}>
       {children}
     </AdContext.Provider>

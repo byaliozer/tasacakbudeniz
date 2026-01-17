@@ -1,64 +1,37 @@
 import React from 'react';
-import { View, Text, StyleSheet, Platform } from 'react-native';
-import { useAds } from '../context/AdContext';
+import { View, Text, StyleSheet } from 'react-native';
 
 interface BannerAdProps {
   style?: object;
 }
 
+/**
+ * Banner Ad Placeholder Component
+ * Expo Go'da placeholder gösterir
+ * Production build'de gerçek AdMob reklamı gösterecek
+ * 
+ * AdMob IDs:
+ * - Banner: ca-app-pub-9873123247401502/9749849505
+ * - Interstitial: ca-app-pub-9873123247401502/6521050938
+ */
 export function BannerAd({ style }: BannerAdProps) {
-  const { isMobile } = useAds();
-
-  // Web placeholder - shows where ad will appear
-  if (!isMobile) {
-    return (
-      <View style={[styles.placeholder, style]}>
-        <Text style={styles.placeholderText}>📢 Reklam Alanı (Mobilde görünecek)</Text>
-      </View>
-    );
-  }
-
-  // Mobile - placeholder that will be replaced with actual ad in production build
-  // react-native-google-mobile-ads requires native build
   return (
     <View style={[styles.container, style]}>
-      <View style={styles.adPlaceholder}>
-        <Text style={styles.adText}>📱 AdMob Banner</Text>
-      </View>
+      <Text style={styles.text}>📢 Reklam Alanı</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#f0f0f0',
-    minHeight: 60,
-  },
-  placeholder: {
-    height: 60,
+    height: 50,
     backgroundColor: 'rgba(0,0,0,0.05)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 8,
-    marginHorizontal: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.1)',
-    borderStyle: 'dashed',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.1)',
   },
-  placeholderText: {
-    color: '#666',
-    fontSize: 12,
-  },
-  adPlaceholder: {
-    height: 50,
-    backgroundColor: '#E8E8E8',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-  },
-  adText: {
+  text: {
     color: '#888',
     fontSize: 12,
   },
