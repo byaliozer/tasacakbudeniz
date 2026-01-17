@@ -139,16 +139,20 @@ export default function QuizScreen() {
     const question = quiz?.questions[currentIndex];
     if (!question) return;
     
+    // Normalize both values to uppercase strings for comparison
+    const selectedId = String(optionId).trim().toUpperCase();
+    const correctId = String(question.correct_option).trim().toUpperCase();
+    
     // Debug log
     console.log('=== ANSWER DEBUG ===');
-    console.log('Selected option ID:', optionId);
-    console.log('Correct option:', question.correct_option);
-    console.log('Question:', question.text);
-    console.log('Options:', question.options.map(o => `${o.id}: ${o.text}`));
-    console.log('Is correct:', optionId === question.correct_option);
+    console.log('Selected option ID (raw):', optionId);
+    console.log('Correct option (raw):', question.correct_option);
+    console.log('Selected ID (normalized):', selectedId);
+    console.log('Correct ID (normalized):', correctId);
+    console.log('Is correct:', selectedId === correctId);
     
     setSelectedAnswer(optionId);
-    const isCorrect = optionId === question.correct_option;
+    const isCorrect = selectedId === correctId;
     const answerTime = (Date.now() - questionStartTime) / 1000;
     const isBonus = answerTime <= BONUS_TIME;
     
