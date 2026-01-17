@@ -1,4 +1,4 @@
-const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
+const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://denizquiz.emergent.host';
 
 export interface Episode {
   id: number;
