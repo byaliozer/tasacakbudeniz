@@ -139,6 +139,14 @@ export default function QuizScreen() {
     const question = quiz?.questions[currentIndex];
     if (!question) return;
     
+    // Debug log
+    console.log('=== ANSWER DEBUG ===');
+    console.log('Selected option ID:', optionId);
+    console.log('Correct option:', question.correct_option);
+    console.log('Question:', question.text);
+    console.log('Options:', question.options.map(o => `${o.id}: ${o.text}`));
+    console.log('Is correct:', optionId === question.correct_option);
+    
     setSelectedAnswer(optionId);
     const isCorrect = optionId === question.correct_option;
     const answerTime = (Date.now() - questionStartTime) / 1000;
