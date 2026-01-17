@@ -147,35 +147,48 @@ async def get_episodes_data() -> List[Episode]:
         csv_text = await fetch_csv_from_sheets(EPISODES_GID)
         rows = parse_csv(csv_text)
         
+        logger.info(f"Parsed {len(rows)} episode rows")
+        if rows:
+            logger.info(f"First row keys: {list(rows[0].keys())}")
+        
         episodes = []
         for row in rows:
             try:
-                episode = Episode(
-                    id=int(row.get('episode_id', row.get('id', 0))),
-                    name=row.get('episode_name', row.get('name', f"Bölüm {row.get('id', '?')}")),
-                    question_count=25,
-                    is_locked=row.get('is_locked', 'false').lower() == 'true',
-                    description=row.get('description', '')
-                )
-                episodes.append(episode)
+                # Try different column name variations
+                episode_id = int(row.get('episode_id') or row.get('id') or row.get('bölüm_no') or row.get('bolum_no') or 0)
+                episode_name = row.get('episode_name') or row.get('name') or row.get('bölüm_adı') or row.get('bolum_adi') or f"{episode_id}. Bölüm"
+                is_locked = (row.get('is_locked') or row.get('durum') or 'açık').lower() in ['kilitli', 'locked', 'true', '1']
+                description = row.get('description') or row.get('açıklama') or row.get('aciklama') or ''
+                
+                if episode_id > 0:
+                    episode = Episode(
+                        id=episode_id,
+                        name=episode_name,
+                        question_count=25,
+                        is_locked=is_locked,
+                        description=description
+                    )
+                    episodes.append(episode)
             except Exception as e:
-                logger.warning(f"Error parsing episode row: {e}")
+                logger.warning(f"Error parsing episode row: {e}, row: {row}")
                 continue
         
         # Ensure we have 14 episodes
-        while len(episodes) < 14:
-            episodes.append(Episode(
-                id=len(episodes) + 1,
-                name=f"{len(episodes) + 1}. Bölüm",
-                question_count=25,
-                is_locked=False
-            ))
+        existing_ids = {e.id for e in episodes}
+        for i in range(1, 15):
+            if i not in existing_ids:
+                episodes.append(Episode(
+                    id=i,
+                    name=f"{i}. Bölüm",
+                    question_count=25,
+                    is_locked=False
+                ))
         
+        episodes.sort(key=lambda e: e.id)
         cache[cache_key] = episodes[:14]
         return episodes[:14]
     except Exception as e:
         logger.error(f"Error fetching episodes: {e}")
-        # Return default 14 episodes
         return [Episode(id=i, name=f"{i}. Bölüm", question_count=25) for i in range(1, 15)]
 
 async def get_questions_data() -> Dict[int, List[Dict]]:
