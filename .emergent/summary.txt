@@ -1,0 +1,165 @@
+<analysis>
+
+**original_problem_statement**: The user wants to create an interactive quiz mobile application for the Turkish TV series Taşacak Bu Deniz.
+
+**PRODUCT REQUIREMENTS**:
+- The application will be a quiz game with questions and answers fetched dynamically from a Google Sheet.
+- **Game Mechanics**:
+    - Users start with 3 lives. A wrong answer or timeout costs one life.
+    - Each question has a 20-second timer with visual and audio cues for the last 10 seconds.
+    - Scoring is based on difficulty (Easy: 10, Medium: 20, Hard: 50).
+    - A Super Zeka bonus of +5 points is awarded for correct answers within 5 seconds.
+- **Leaderboard**:
+    - Scores are saved to a MongoDB database.
+    - A leaderboard displays the top 10 players, with special icons for the top 3.
+- **Design**:
+    - A mobile-first, Duolingo-style interface with a specific color palette and 3D-effect buttons.
+- **Technology**:
+    - Expo-based React Native app for the frontend.
+    - FastAPI backend to serve data from Google Sheets and interact with MongoDB.
+- **Feature Request (added later)**:
+    - Integrate Google AdMob to display a banner ad on most screens and an interstitial (full-screen) ad when a user runs out of lives or completes a quiz.
+
+**User's preferred language**: Türkçe
+
+**what currently exists?**
+A full-stack application has been developed with an Expo frontend and a FastAPI backend. The backend successfully fetches quiz data from the specified Google Sheet and saves scores to a MongoDB leaderboard. The frontend includes all the required screens: Home (episode selection), Quiz, Results, and Leaderboard.
+
+The project has been configured for native builds using EAS (Expo Application Services) to support Google AdMob integration. The user has successfully built and installed an APK. However, the installed application has a critical bug preventing gameplay.
+
+**Last working item**:
+-   **Last item agent was working**: The agent was debugging a critical bug where every answer selected by the user in the quiz is incorrectly marked as correct. The user provided a video clearly demonstrating that all option buttons turn green upon selection, regardless of whether the answer is right or wrong.
+-   **Status**: IN PROGRESS
+-   **Agent Testing Done**: N (The agent performed a web-based test and mistakenly concluded the logic was working, but this was contradicted by the user's video of the native app. The root cause has not been fixed.)
+-   **Which testing method agent to use?** The agent must first fix the bug in the code. After the fix, a new native build using **EAS Build** is required. The user will then perform manual testing on the generated APK.
+-   **User Testing Done**: Y (The user discovered and reported the critical bug via video.)
+
+**All Pending/In progress Issue list**:
+-   **Issue 1: (P0) Critical Bug: All Quiz Answers are Marked as Correct**
+    -   **Description**: In the quiz screen (), when a user selects any answer option, the application logic incorrectly validates it as correct. The UI reflects this by turning all option buttons green and awarding points, making the quiz unplayable.
+    -   **Attempted fixes**:
+        -   The backend API was tested and confirmed to be sending the correct data structure, including the  field.
+        -   The agent changed the style application logic in  from object spreading to an array () but this did not solve the underlying issue.
+        -   The agent checked the  function logic, which appears correct on the surface, but it is clearly failing in practice.
+    -   **Next debug checklist**:
+        1.  **Inspect  in **: Add  statements to print the values and types of  and  just before the  condition. It's highly likely there's a type mismatch (e.g.,  vs ) or subtle string formatting difference.
+        2.  **Review the UI logic for styling options**: In  (around line 350), the logic that determines the style for each option button is flawed. The condition  causes both the selected answer AND the correct answer to be styled simultaneously. The fact that *all* buttons turn green suggests the state update logic in  might be setting  to  unconditionally.
+        3.  **Correct the Style Logic**: The style array for the option's  should be:
+            
+            This ensures only the correct button becomes green and the wrongly selected one becomes red.
+    -   **Why fix this issue and what will be achieved with the fix?**: This bug breaks the core gameplay loop, making the entire application unusable. Fixing it is the highest priority to deliver a functional app.
+    -   **Status**: IN PROGRESS
+    -   **Is recurring issue?** N
+    -   **Should Test frontend/backend/both after fix?** Frontend. A new APK build is required for user verification.
+    -   **Blocked on other issue**: None
+
+**In progress Task List**:
+There are no other tasks in progress. The sole focus is on fixing the critical bug.
+
+**Upcoming and Future Tasks**
+- **Upcoming Tasks**:
+  - **P0: Implement Sound Effects**: Implement the audio feedback for correct/wrong answers, timer ticks, and bonus points as specified in the PRD, likely using .
+  - **P1: Verify AdMob Ads**: After the gameplay bug is fixed and a new APK is built, confirm that the Banner and Interstitial ads are loading and displaying correctly in the native application. The interstitial ad logic needs to be triggered on game over or quiz completion.
+- **Future Tasks**:
+  - **Re-introduce Animations**:  was removed to solve build issues. Once the app is stable, this library can be re-added to implement the UI animations (bouncing, shaking, sliding) from the original PRD.
+
+**Completed work in this session**
+- **Backend**:
+  - Created a FastAPI server () that serves quiz data.
+  - Integrated with Google Sheets to fetch episodes and questions, with 5-minute caching.
+  - Implemented a MongoDB  collection for storing and retrieving scores.
+- **Frontend**:
+  - Built the UI for all primary screens: Home (), Quiz (), Result (), and Leaderboard ().
+  - Set up  for file-based navigation.
+- **Build & Deployment**:
+  - Configured the project for native builds with EAS (, ).
+  - Generated and set a custom app icon based on the user's banner image.
+  - Added necessary Android permissions (e.g., ) to .
+  - Successfully guided the user to produce an APK after resolving numerous build errors (slug mismatch, project ID, keystore issues, icon dimensions).
+
+**Earlier issues found/mentioned but not fixed**
+None. All prior issues were related to the build process and have been resolved, leading to the current state where an APK can be built but contains a critical runtime bug.
+
+**Known issue recurrence from previous fork**
+N/A. This is the first summary.
+
+**Code Architecture**
+
+
+**Key Technical Concepts**
+-   **Frontend**: React Native, Expo, Expo Router, TypeScript
+-   **Backend**: Python, FastAPI,  for API calls,  for caching
+-   **Database**: MongoDB
+-   **Build/Deployment**: Expo Application Services (EAS Build)
+-   **Data Source**: Google Sheets (publicly accessible)
+
+**key DB schema**
+-   **leaderboard**: 
+
+**changes in tech stack**
+-    was removed to fix build errors. All animations are currently disabled.
+
+**All files of reference**
+-   : Location of the critical always correct bug.
+-   : Contains all native app configurations, including name, package ID, permissions, and the AdMob plugin config.
+-   : Configuration file for EAS Build.
+-   : Defines the frontend-backend communication and includes a hardcoded production URL fallback.
+-   : The entire backend logic.
+
+**Areas that need refactoring**:
+- The AdMob implementation (, ) was modified multiple times to work around web preview issues. It needs to be cleaned up and solidified to ensure it works reliably on native while not breaking the web preview.
+
+**key api endpoints**
+-   : Fetches the list of quiz episodes.
+-   : Fetches a set of questions for a given episode.
+-   : Saves a player's score.
+-   : Retrieves the leaderboard for an episode.
+
+**Critical Info for New Agent**
+-   **The primary focus is the critical bug in  where all answers are marked correct.** Do not work on anything else until this is fixed.
+-   **Native Builds are Required**: Full testing, especially for AdMob and bug verification, requires a native build via **EAS Build**. The user knows how to do this through the Expo website. Expo Go is not sufficient.
+-   **Dependency Sensitivity**: The project has proven to be very sensitive to dependency versions.  caused many issues. Be cautious when adding or updating packages.
+-   **Production API URL**:  is configured to use  as a fallback URL, which is necessary for the production APK to connect to the backend.
+
+**documents created in this job**
+None.
+
+**Last 10 User Messages and any pending HUMAN messages**
+1.  **User**: I found a huge bug. No matter what I press, it says the answer is correct. Please fix this and test all features.
+2.  **Agent**: Acknowledges the critical bug and begins investigation.
+3.  **User**: Did you solve the problem?
+4.  **Agent**: States they are still testing.
+5.  **User**: Did you fix it? Give me a clear answer.
+6.  **Agent**: Provides a summary of fixes (internet permission, API URL, icon) and tells the user to rebuild the APK. (This was premature as the core bug wasn't fixed).
+7.  **User**: I get it, but I discovered a huge bug. All answers are registered as correct. I've attached a video, please watch it and understand the error.
+8.  **Agent**: Acknowledges the video and now understands the UI issue (all buttons turn green).
+9.  **User**: Did you solve the problem?
+10. **Agent**: States they are still testing.
+11. **PENDING**: The user is waiting for a definitive fix for the always correct bug.
+
+**Project Health Check:**
+-   **Broken**: The core quiz answer validation logic is completely broken, making the app unusable.
+-   **Mocked**: AdMob functionality on the web preview is a simple placeholder. Its real functionality on native builds is unverified due to the gameplay bug.
+
+**3rd Party Integrations**
+-   **Google Sheets**: Used as a dynamic data source for questions.
+-   **Google AdMob**: Integrated for monetization via banner and interstitial ads. Requires a native build (EAS).
+-   **MongoDB**: Used as the database for the leaderboard.
+
+**Testing status**
+-   **Testing agent used after significant changes**: YES (The backend testing agent was used and passed, confirming the issue is likely on the frontend).
+-   **Troubleshoot agent used after agent stuck in loop**: NO
+-   **Test files created**: None.
+-   **Known regressions**: Animations were removed to solve build issues.
+
+**Credentials to test flow:**
+N/A
+
+**What agent forgot to execute**
+- The agent failed to correctly diagnose the always correct bug on its first attempt, telling the user to rebuild before the fix was actually implemented. It also got stuck in a loop trying to fix web-preview compatibility with a native-only library () multiple times. The sound effects from the original PRD have not been implemented yet.
+
+</analysis>
+<SYS_PROMPT_SEPARATOR>
+<workspace_dir>
+/app
+</workspace_dir>
