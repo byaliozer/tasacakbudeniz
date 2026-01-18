@@ -308,8 +308,52 @@ export default function QuizScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Exit Confirmation Modal */}
+      <Modal
+        visible={showExitModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={handleExitCancel}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Ionicons name="exit-outline" size={48} color="#ff6b6b" />
+            <Text style={styles.modalTitle}>Oyundan Çık</Text>
+            <Text style={styles.modalText}>
+              Oyundan çıkmak istediğinize emin misiniz?{'\n'}
+              İlerlemeniz kaydedilmeyecek.
+            </Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={styles.modalCancelButton} 
+                onPress={handleExitCancel}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.modalCancelText}>Vazgeç</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.modalConfirmButton} 
+                onPress={handleExitConfirm}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.modalConfirmText}>Evet, Çık</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* Top Bar */}
       <View style={styles.topBar}>
+        {/* Exit Button */}
+        <TouchableOpacity 
+          style={styles.exitButton} 
+          onPress={handleExitPress}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="close" size={24} color="#888" />
+        </TouchableOpacity>
+
         {/* Lives */}
         <View style={styles.livesContainer}>
           {[1, 2, 3].map((i) => (
