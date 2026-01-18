@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://denizquiz.emergent.host';
+// Use preview backend URL - this is the updated backend with all new endpoints
+const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://tdbquiz.preview.emergentagent.com';
 
 // Storage keys
 const STORAGE_KEYS = {
