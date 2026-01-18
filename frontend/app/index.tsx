@@ -33,40 +33,62 @@ export default function MainMenu() {
           </View>
         </View>
 
-        {/* Menu Buttons */}
-        <View style={styles.menuContainer}>
+        {/* Game Mode Buttons - Primary Actions */}
+        <View style={styles.gameModeContainer}>
           <TouchableOpacity
-            style={[styles.menuButton, styles.episodeButton]}
+            style={styles.gameModeButton}
             onPress={() => router.push('/episodes')}
+            activeOpacity={0.85}
           >
-            <Ionicons name="play-circle" size={28} color="#fff" />
-            <Text style={styles.menuButtonText}>Bölüm Modu</Text>
-            <Text style={styles.menuButtonHint}>14 bölüm, her biri 25 soru</Text>
+            <View style={styles.gameModeIconContainer}>
+              <Ionicons name="play-circle" size={32} color="#fff" />
+            </View>
+            <View style={styles.gameModeTextContainer}>
+              <Text style={styles.gameModeTitle}>Bölüm Modu</Text>
+              <Text style={styles.gameModeHint}>14 bölüm • Her biri 25 soru</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color="rgba(255,255,255,0.6)" />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.menuButton, styles.mixedButton]}
+            style={[styles.gameModeButton, styles.mixedModeButton]}
             onPress={() => router.push('/quiz?mode=mixed')}
+            activeOpacity={0.85}
           >
-            <Ionicons name="shuffle" size={28} color="#fff" />
-            <Text style={styles.menuButtonText}>Karışık Mod</Text>
-            <Text style={styles.menuButtonHint}>Sonsuz mod, tüm sorular</Text>
+            <View style={[styles.gameModeIconContainer, styles.mixedIconContainer]}>
+              <Ionicons name="shuffle" size={32} color="#fff" />
+            </View>
+            <View style={styles.gameModeTextContainer}>
+              <Text style={styles.gameModeTitle}>Karışık Mod</Text>
+              <Text style={styles.gameModeHint}>Sonsuz mod • Tüm sorular</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color="rgba(255,255,255,0.6)" />
           </TouchableOpacity>
+        </View>
 
+        {/* Spacer */}
+        <View style={styles.spacer} />
+
+        {/* Utility Buttons - Secondary Actions */}
+        <View style={styles.utilityContainer}>
           <TouchableOpacity
-            style={[styles.menuButton, styles.leaderboardButton]}
+            style={styles.utilityButton}
             onPress={() => router.push('/leaderboard')}
+            activeOpacity={0.7}
           >
-            <Ionicons name="trophy" size={28} color="#fff" />
-            <Text style={styles.menuButtonText}>Liderlik Tablosu</Text>
+            <Ionicons name="trophy" size={22} color="#ffc107" />
+            <Text style={styles.utilityText}>Liderlik</Text>
           </TouchableOpacity>
 
+          <View style={styles.utilityDivider} />
+
           <TouchableOpacity
-            style={[styles.menuButton, styles.settingsButton]}
+            style={styles.utilityButton}
             onPress={() => router.push('/settings')}
+            activeOpacity={0.7}
           >
-            <Ionicons name="settings" size={28} color="#fff" />
-            <Text style={styles.menuButtonText}>Ayarlar</Text>
+            <Ionicons name="settings" size={22} color="#888" />
+            <Text style={styles.utilityText}>Ayarlar</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -116,39 +138,75 @@ const styles = StyleSheet.create({
     color: '#009688',
     marginTop: 2,
   },
-  menuContainer: {
+  gameModeContainer: {
     gap: 12,
   },
-  menuButton: {
+  gameModeButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    gap: 12,
-  },
-  episodeButton: {
     backgroundColor: '#009688',
+    borderRadius: 16,
+    padding: 16,
+    gap: 14,
+    shadowColor: '#009688',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
-  mixedButton: {
+  mixedModeButton: {
     backgroundColor: '#e91e63',
+    shadowColor: '#e91e63',
   },
-  leaderboardButton: {
-    backgroundColor: '#ff9800',
+  gameModeIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  settingsButton: {
-    backgroundColor: '#607d8b',
+  mixedIconContainer: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
   },
-  menuButtonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
+  gameModeTextContainer: {
     flex: 1,
   },
-  menuButtonHint: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.7)',
-    position: 'absolute',
-    bottom: 8,
-    left: 56,
+  gameModeTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  gameModeHint: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 4,
+  },
+  spacer: {
+    flex: 1,
+  },
+  utilityContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#2d2d44',
+    borderRadius: 12,
+    marginBottom: 16,
+    overflow: 'hidden',
+  },
+  utilityButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    gap: 8,
+  },
+  utilityDivider: {
+    width: 1,
+    backgroundColor: '#3d3d54',
+  },
+  utilityText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#aaa',
   },
 });
