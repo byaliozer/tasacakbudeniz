@@ -54,7 +54,7 @@ export default function UsernameScreen() {
         {/* Banner Image */}
         <View style={styles.bannerContainer}>
           <Image
-            source={require('../assets/images/app-image.png')}
+            source={require('../assets/images/banner.png')}
             style={styles.banner}
             resizeMode="cover"
           />
