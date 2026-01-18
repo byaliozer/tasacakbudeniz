@@ -226,9 +226,15 @@ export default function QuizScreen() {
       // Game over - no more lives
       setGameOver(true);
       console.log('[Quiz] Game Over! No lives left');
-      setTimeout(() => {
-        console.log('[Quiz] Navigating to result...');
-        endGame();
+      setTimeout(async () => {
+        try {
+          console.log('[Quiz] Navigating to result...');
+          await endGame();
+        } catch (e) {
+          console.error('[Quiz] Error in endGame:', e);
+          // Fallback navigation
+          router.replace('/result');
+        }
       }, 1500);
     } else {
       // Still have lives - continue
