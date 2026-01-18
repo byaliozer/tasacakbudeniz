@@ -148,7 +148,7 @@ export default function SettingsScreen() {
 
           <TouchableOpacity
             style={styles.settingRow}
-            onPress={() => Linking.openURL('mailto:destek@example.com')}
+            onPress={() => Linking.openURL('mailto:busegame50@gmail.com')}
           >
             <View style={styles.settingInfo}>
               <Ionicons name="mail" size={24} color="#009688" />
@@ -157,7 +157,10 @@ export default function SettingsScreen() {
             <Ionicons name="chevron-forward" size={20} color="#666" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.settingRow}>
+          <TouchableOpacity 
+            style={styles.settingRow}
+            onPress={() => Linking.openURL('https://busegame.com/gizlilik-politikasi')}
+          >
             <View style={styles.settingInfo}>
               <Ionicons name="document-text" size={24} color="#009688" />
               <Text style={styles.settingText}>Gizlilik Politikası</Text>
