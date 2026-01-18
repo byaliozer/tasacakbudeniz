@@ -5,8 +5,9 @@ import { BannerAd as GoogleBannerAd, BannerAdSize, TestIds } from 'react-native-
 // Production AdMob Banner ID
 const PRODUCTION_BANNER_ID = 'ca-app-pub-9873123247401502/9749849505';
 
-// Use test ID for debug builds, production ID for release
-const BANNER_AD_UNIT_ID = __DEV__ ? TestIds.BANNER : PRODUCTION_BANNER_ID;
+// Always use test IDs first to verify ads are working
+// Once verified, switch to: __DEV__ ? TestIds.BANNER : PRODUCTION_BANNER_ID
+const BANNER_AD_UNIT_ID = TestIds.BANNER;
 
 interface BannerAdProps {
   style?: object;
@@ -16,11 +17,20 @@ interface BannerAdProps {
 export function BannerAd({ style }: BannerAdProps) {
   const [error, setError] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
-    console.log('[BannerAd] Using unit ID:', BANNER_AD_UNIT_ID);
+    console.log('[BannerAd] Initializing with unit ID:', BANNER_AD_UNIT_ID);
     console.log('[BannerAd] Is DEV mode:', __DEV__);
+    console.log('[BannerAd] Test ID being used:', TestIds.BANNER);
   }, []);
+
+  const handleRetry = () => {
+    if (retryCount < 3) {
+      setError(null);
+      setRetryCount(prev => prev + 1);
+    }
+  };
 
   return (
     <View style={[styles.container, style]}>
@@ -33,11 +43,15 @@ export function BannerAd({ style }: BannerAdProps) {
       {error ? (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Reklam yüklenemedi</Text>
+          <Text style={styles.errorDetail}>{error}</Text>
+          {retryCount < 3 && (
+            <Text style={styles.retryText} onPress={handleRetry}>Tekrar dene</Text>
+          )}
         </View>
       ) : (
         <GoogleBannerAd
           unitId={BANNER_AD_UNIT_ID}
-          size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+          size={BannerAdSize.BANNER}
           requestOptions={{
             requestNonPersonalizedAdsOnly: true,
           }}
@@ -48,7 +62,7 @@ export function BannerAd({ style }: BannerAdProps) {
           }}
           onAdFailedToLoad={(err) => {
             console.warn('[BannerAd] ❌ Failed to load:', JSON.stringify(err));
-            setError(err.message || 'Unknown error');
+            setError(err.message || 'Bilinmeyen hata');
             setLoaded(false);
           }}
         />
@@ -76,14 +90,26 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   errorContainer: {
-    height: 50,
+    height: 60,
     backgroundColor: 'rgba(0,0,0,0.03)',
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
+    paddingHorizontal: 16,
   },
   errorText: {
     color: '#999',
     fontSize: 11,
+  },
+  errorDetail: {
+    color: '#777',
+    fontSize: 9,
+    marginTop: 2,
+  },
+  retryText: {
+    color: '#009688',
+    fontSize: 11,
+    marginTop: 4,
+    textDecorationLine: 'underline',
   },
 });
