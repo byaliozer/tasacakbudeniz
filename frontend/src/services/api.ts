@@ -172,7 +172,15 @@ export async function getEpisodes(): Promise<Episode[]> {
 }
 
 export async function getEpisodeQuiz(episodeId: number): Promise<QuizResponse> {
-  const response = await fetch(`${API_URL}/api/quiz/episode/${episodeId}?count=25`);
+  // Try new endpoint first, fallback to old endpoint
+  let response = await fetch(`${API_URL}/api/quiz/episode/${episodeId}?count=25`);
+  
+  if (!response.ok) {
+    // Fallback to old endpoint format
+    console.log('[API] Trying fallback endpoint...');
+    response = await fetch(`${API_URL}/api/quiz/${episodeId}?count=25`);
+  }
+  
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
     throw new Error(error.detail || 'Quiz yüklenemedi');
@@ -182,11 +190,40 @@ export async function getEpisodeQuiz(episodeId: number): Promise<QuizResponse> {
 }
 
 export async function getMixedQuiz(): Promise<QuizResponse> {
-  const response = await fetch(`${API_URL}/api/quiz/mixed`);
+  // Try new endpoint first
+  let response = await fetch(`${API_URL}/api/quiz/mixed`);
+  
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    throw new Error(error.detail || 'Quiz yüklenemedi');
+    // Fallback: fetch all episodes and combine questions
+    console.log('[API] Mixed endpoint not found, using fallback...');
+    const episodes = await getEpisodes();
+    const allQuestions: any[] = [];
+    
+    for (const ep of episodes.slice(0, 5)) { // Limit to first 5 episodes for performance
+      try {
+        const quiz = await getEpisodeQuiz(ep.id);
+        allQuestions.push(...quiz.questions);
+      } catch (e) {
+        console.log(`[API] Could not fetch episode ${ep.id}`);
+      }
+    }
+    
+    // Shuffle questions
+    for (let i = allQuestions.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [allQuestions[i], allQuestions[j]] = [allQuestions[j], allQuestions[i]];
+    }
+    
+    return {
+      episode_id: null,
+      episode_name: 'Karışık Mod',
+      questions: allQuestions,
+      total_questions: allQuestions.length,
+      max_possible_score: allQuestions.reduce((sum, q) => sum + q.points + 5, 0),
+      mode: 'mixed'
+    };
   }
+  
   const data = await response.json();
   return normalizeQuizResponse(data);
 }
