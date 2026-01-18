@@ -173,7 +173,7 @@ async def get_episodes_data() -> List[Episode]:
                 logger.warning(f"Error parsing episode row: {e}, row: {row}")
                 continue
         
-        # Ensure we have 14 episodes
+        # Ensure we have at least 14 episodes (fill missing ones)
         existing_ids = {e.id for e in episodes}
         for i in range(1, 15):
             if i not in existing_ids:
@@ -185,8 +185,8 @@ async def get_episodes_data() -> List[Episode]:
                 ))
         
         episodes.sort(key=lambda e: e.id)
-        cache[cache_key] = episodes[:14]
-        return episodes[:14]
+        cache[cache_key] = episodes  # No limit - show all episodes from sheets
+        return episodes
     except Exception as e:
         logger.error(f"Error fetching episodes: {e}")
         return [Episode(id=i, name=f"{i}. Bölüm", question_count=25) for i in range(1, 15)]
