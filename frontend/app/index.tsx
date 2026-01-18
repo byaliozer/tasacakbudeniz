@@ -32,7 +32,6 @@ export default function MainMenu() {
         {/* Title */}
         <View style={styles.titleContainer}>
           <Text style={styles.title}>Taşacak Bu Deniz</Text>
-          <Text style={styles.subtitle}>Quiz Oyunu</Text>
         </View>
 
         {/* Game Mode Buttons - Primary Actions */}
