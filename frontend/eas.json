@@ -7,6 +7,9 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_BACKEND_URL": "https://tdbquiz.preview.emergentagent.com"
+      },
       "android": {
         "buildType": "apk",
         "withoutCredentials": true
@@ -14,12 +17,18 @@
     },
     "preview": {
       "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_BACKEND_URL": "https://tdbquiz.preview.emergentagent.com"
+      },
       "android": {
         "buildType": "apk",
         "withoutCredentials": true
       }
     },
     "production": {
+      "env": {
+        "EXPO_PUBLIC_BACKEND_URL": "https://tdbquiz.preview.emergentagent.com"
+      },
       "android": {
         "buildType": "apk",
         "withoutCredentials": true
