@@ -79,6 +79,54 @@ export default function QuizScreen() {
     setLoading(false);
   };
 
+  // Pause/Resume timer functions
+  const pauseTimer = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    pausedTimeRef.current = timer;
+    setIsPaused(true);
+  };
+
+  const resumeTimer = () => {
+    setIsPaused(false);
+    setTimer(pausedTimeRef.current);
+    
+    timerRef.current = setInterval(() => {
+      setTimer((prev) => {
+        if (prev <= 1) {
+          clearInterval(timerRef.current!);
+          handleTimeout();
+          return 0;
+        }
+        if (prev <= 6 && prev > 1 && !isMuted) {
+          playTickSound();
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  // Exit confirmation handlers
+  const handleExitPress = () => {
+    pauseTimer();
+    setShowExitModal(true);
+  };
+
+  const handleExitConfirm = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setShowExitModal(false);
+    router.replace('/');
+  };
+
+  const handleExitCancel = () => {
+    setShowExitModal(false);
+    if (answerState === 'none' && !gameOver) {
+      resumeTimer();
+    }
+  };
+
   const startTimer = () => {
     questionStartTime.current = Date.now();
     setTimer(20);
