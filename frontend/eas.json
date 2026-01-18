@@ -30,16 +30,12 @@
         "EXPO_PUBLIC_BACKEND_URL": "https://tdbquiz.preview.emergentagent.com"
       },
       "android": {
-        "buildType": "app-bundle"
+        "buildType": "app-bundle",
+        "withoutCredentials": true
       }
     }
   },
   "submit": {
-    "production": {
-      "android": {
-        "serviceAccountKeyPath": "./google-play-key.json",
-        "track": "production"
-      }
-    }
+    "production": {}
   }
 }
