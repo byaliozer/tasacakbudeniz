@@ -271,31 +271,45 @@ export default function QuizScreen() {
   const endGame = async () => {
     if (timerRef.current) clearInterval(timerRef.current);
     
+    console.log('[Quiz] endGame called, score:', score, 'mode:', mode);
+    
+    // Calculate current values using refs for reliability
+    const finalScore = score;
+    const finalCorrectCount = correctCount;
+    const finalSpeedBonus = speedBonus;
+    const finalQuestionsAnswered = currentIndex + 1;
+    
+    // Default result params (in case API fails)
+    const baseParams = {
+      mode,
+      score: finalScore.toString(),
+      correctCount: finalCorrectCount.toString(),
+      speedBonus: finalSpeedBonus.toString(),
+      isNewRecord: '0',
+      bestScore: finalScore.toString(),
+    };
+    
     try {
       if (mode === 'mixed') {
-        const result = await submitMixedScore(score, correctCount, speedBonus, currentIndex + 1);
+        const result = await submitMixedScore(finalScore, finalCorrectCount, finalSpeedBonus, finalQuestionsAnswered);
+        console.log('[Quiz] Mixed score submitted:', result);
         router.replace({
           pathname: '/result',
           params: {
-            mode: 'mixed',
-            score: score.toString(),
-            correctCount: correctCount.toString(),
-            speedBonus: speedBonus.toString(),
-            questionsAnswered: (currentIndex + 1).toString(),
+            ...baseParams,
+            questionsAnswered: finalQuestionsAnswered.toString(),
             isNewRecord: result.is_new_record ? '1' : '0',
             bestScore: result.best_score.toString(),
           },
         });
       } else {
-        const result = await submitEpisodeScore(episodeId, score, correctCount, speedBonus);
+        const result = await submitEpisodeScore(episodeId, finalScore, finalCorrectCount, finalSpeedBonus);
+        console.log('[Quiz] Episode score submitted:', result);
         router.replace({
           pathname: '/result',
           params: {
-            mode: 'episode',
+            ...baseParams,
             episodeId: episodeId.toString(),
-            score: score.toString(),
-            correctCount: correctCount.toString(),
-            speedBonus: speedBonus.toString(),
             totalQuestions: '25',
             isNewRecord: result.is_new_record ? '1' : '0',
             bestScore: result.best_score.toString(),
@@ -303,8 +317,26 @@ export default function QuizScreen() {
         });
       }
     } catch (e) {
-      console.error('Error saving score:', e);
-      router.replace('/');
+      console.error('[Quiz] Error saving score:', e);
+      // Still navigate to result screen even if API fails
+      if (mode === 'mixed') {
+        router.replace({
+          pathname: '/result',
+          params: {
+            ...baseParams,
+            questionsAnswered: finalQuestionsAnswered.toString(),
+          },
+        });
+      } else {
+        router.replace({
+          pathname: '/result',
+          params: {
+            ...baseParams,
+            episodeId: episodeId.toString(),
+            totalQuestions: '25',
+          },
+        });
+      }
     }
   };
 
