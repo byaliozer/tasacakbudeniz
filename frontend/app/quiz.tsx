@@ -8,6 +8,7 @@ import {
   Animated,
   Vibration,
   Platform,
+  Modal,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -42,9 +43,12 @@ export default function QuizScreen() {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [gameOver, setGameOver] = useState(false);
   const [vibrationEnabled, setVibrationEnabled] = useState(true);
+  const [showExitModal, setShowExitModal] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const questionStartTime = useRef<number>(0);
+  const pausedTimeRef = useRef<number>(0);
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const bonusAnim = useRef(new Animated.Value(0)).current;
