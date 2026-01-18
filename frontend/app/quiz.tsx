@@ -214,19 +214,24 @@ export default function QuizScreen() {
       Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
     ]).start();
     
-    // Check lives BEFORE decrementing to handle game over properly
-    const newLives = lives - 1;
-    console.log('[Quiz] Lives:', { current: lives, new: newLives });
+    // Use ref to track lives to avoid closure issues
+    const currentLives = livesRef.current;
+    const newLives = currentLives - 1;
+    livesRef.current = newLives;
+    setLives(newLives);
+    
+    console.log('[Quiz] Lives:', { current: currentLives, new: newLives });
     
     if (newLives <= 0) {
       // Game over - no more lives
-      setLives(0);
       setGameOver(true);
       console.log('[Quiz] Game Over! No lives left');
-      setTimeout(() => endGame(), 1500);
+      setTimeout(() => {
+        console.log('[Quiz] Navigating to result...');
+        endGame();
+      }, 1500);
     } else {
       // Still have lives - continue
-      setLives(newLives);
       setTimeout(nextQuestion, 1500);
     }
   };
