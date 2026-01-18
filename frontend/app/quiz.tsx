@@ -49,6 +49,7 @@ export default function QuizScreen() {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const questionStartTime = useRef<number>(0);
   const pausedTimeRef = useRef<number>(0);
+  const livesRef = useRef(3); // Track lives with ref to avoid closure issues
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const bonusAnim = useRef(new Animated.Value(0)).current;
