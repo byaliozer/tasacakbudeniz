@@ -6,6 +6,7 @@ import {
   StyleSheet,
   FlatList,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -39,29 +40,55 @@ export default function EpisodesScreen() {
     setLoading(false);
   };
 
+  const handleEpisodePress = (episode: Episode) => {
+    if (episode.is_locked) {
+      Alert.alert(
+        '🔒 Kilitli Bölüm',
+        'Bu bölüm henüz açılmadı. Yakında eklenecek!',
+        [{ text: 'Tamam', style: 'default' }]
+      );
+      return;
+    }
+    router.push(`/quiz?mode=episode&episode=${episode.id}`);
+  };
+
   const renderEpisode = ({ item }: { item: Episode }) => {
     const score = episodeScores[item.id];
     const hasScore = score !== undefined && score > 0;
+    const isLocked = item.is_locked;
 
     return (
       <TouchableOpacity
-        style={styles.episodeCard}
-        onPress={() => router.push(`/quiz?mode=episode&episode=${item.id}`)}
+        style={[styles.episodeCard, isLocked && styles.lockedCard]}
+        onPress={() => handleEpisodePress(item)}
+        activeOpacity={isLocked ? 0.6 : 0.8}
       >
-        <View style={styles.episodeNumber}>
-          <Text style={styles.episodeNumberText}>{item.id}</Text>
+        <View style={[styles.episodeNumber, isLocked && styles.lockedNumber]}>
+          {isLocked ? (
+            <Ionicons name="lock-closed" size={20} color="#666" />
+          ) : (
+            <Text style={styles.episodeNumberText}>{item.id}</Text>
+          )}
         </View>
         <View style={styles.episodeInfo}>
-          <Text style={styles.episodeName}>{item.name}</Text>
-          <Text style={styles.episodeQuestions}>25 Soru</Text>
+          <Text style={[styles.episodeName, isLocked && styles.lockedText]}>
+            {item.name}
+          </Text>
+          <Text style={[styles.episodeQuestions, isLocked && styles.lockedSubtext]}>
+            {isLocked ? 'Yakında' : '25 Soru'}
+          </Text>
         </View>
-        {hasScore && (
+        {!isLocked && hasScore && (
           <View style={styles.scoreContainer}>
             <Ionicons name="star" size={16} color="#ffc107" />
             <Text style={styles.scoreText}>{score}</Text>
           </View>
         )}
-        <Ionicons name="chevron-forward" size={24} color="#666" />
+        {isLocked ? (
+          <Ionicons name="lock-closed" size={20} color="#666" />
+        ) : (
+          <Ionicons name="chevron-forward" size={24} color="#666" />
+        )}
       </TouchableOpacity>
     );
   };
@@ -135,6 +162,10 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 12,
   },
+  lockedCard: {
+    backgroundColor: '#232338',
+    opacity: 0.7,
+  },
   episodeNumber: {
     width: 44,
     height: 44,
@@ -142,6 +173,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#009688',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  lockedNumber: {
+    backgroundColor: '#3d3d54',
   },
   episodeNumberText: {
     fontSize: 18,
@@ -156,10 +190,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#fff',
   },
+  lockedText: {
+    color: '#888',
+  },
   episodeQuestions: {
     fontSize: 12,
     color: '#888',
     marginTop: 2,
+  },
+  lockedSubtext: {
+    color: '#666',
+    fontStyle: 'italic',
   },
   scoreContainer: {
     flexDirection: 'row',
