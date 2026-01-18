@@ -21,7 +21,7 @@
         "EXPO_PUBLIC_BACKEND_URL": "https://tdbquiz.preview.emergentagent.com"
       },
       "android": {
-        "buildType": "apk",
+        "buildType": "app-bundle",
         "withoutCredentials": true
       }
     },
