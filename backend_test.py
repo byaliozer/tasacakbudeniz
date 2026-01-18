@@ -91,10 +91,10 @@ class QuizAPITester:
         print(f"\n🎯 Testing Specific Endpoints from Review Request")
         print("-" * 50)
         
-        # Test GET /api/quiz/1?count=5
+        # Test GET /api/quiz/episode/1?count=5
         quiz_1_data = self.test_quiz_endpoint(1, 5, "Review Request Test 1")
         
-        # Test GET /api/quiz/2?count=3
+        # Test GET /api/quiz/episode/2?count=3
         quiz_2_data = self.test_quiz_endpoint(2, 3, "Review Request Test 2")
         
         return quiz_1_data, quiz_2_data
