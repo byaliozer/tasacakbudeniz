@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.byaliozer.tasacakbudeniz",
+      "bundleIdentifier": "com.busegame.tasacakbudeniz",
       "infoPlist": {
         "GADApplicationIdentifier": "ca-app-pub-9873123247401502~2062931178",
         "SKAdNetworkItems": [
