@@ -23,14 +23,16 @@ export default function MainMenu() {
         {/* Banner Image */}
         <View style={styles.bannerContainer}>
           <Image
-            source={require('../assets/images/app-image.png')}
+            source={require('../assets/images/banner.png')}
             style={styles.banner}
             resizeMode="cover"
           />
-          <View style={styles.titleOverlay}>
-            <Text style={styles.title}>Taşacak Bu Deniz</Text>
-            <Text style={styles.subtitle}>Quiz Oyunu</Text>
-          </View>
+        </View>
+
+        {/* Title */}
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>Taşacak Bu Deniz</Text>
+          <Text style={styles.subtitle}>Quiz Oyunu</Text>
         </View>
 
         {/* Game Mode Buttons - Primary Actions */}
