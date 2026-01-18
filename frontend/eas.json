@@ -21,17 +21,17 @@
         "EXPO_PUBLIC_BACKEND_URL": "https://tdbquiz.preview.emergentagent.com"
       },
       "android": {
-        "buildType": "app-bundle",
+        "buildType": "apk",
         "withoutCredentials": true
       }
     },
     "production": {
+      "distribution": "store",
       "env": {
         "EXPO_PUBLIC_BACKEND_URL": "https://tdbquiz.preview.emergentagent.com"
       },
       "android": {
-        "buildType": "app-bundle",
-        "withoutCredentials": true
+        "buildType": "app-bundle"
       }
     }
   },
