@@ -29,7 +29,7 @@
       }
     },
     "android": {
-      "package": "com.byaliozer.tasacakbudeniz",
+      "package": "com.busegame.tasacakbudeniz",
       "versionCode": 2,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
