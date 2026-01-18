@@ -1,53 +1,123 @@
+diff --git a/frontend/src/services/api.ts b/frontend/src/services/api.ts
+index dc68a8c..f37c57e 100644
+--- a/frontend/src/services/api.ts
++++ b/frontend/src/services/api.ts
+@@ -172,7 +172,15 @@ export async function getEpisodes(): Promise<Episode[]> {
+ }
+ 
+ export async function getEpisodeQuiz(episodeId: number): Promise<QuizResponse> {
+-  const response = await fetch(`${API_URL}/api/quiz/episode/${episodeId}?count=25`);
++  // Try new endpoint first, fallback to old endpoint
++  let response = await fetch(`${API_URL}/api/quiz/episode/${episodeId}?count=25`);
++  
++  if (!response.ok) {
++    // Fallback to old endpoint format
++    console.log('[API] Trying fallback endpoint...');
++    response = await fetch(`${API_URL}/api/quiz/${episodeId}?count=25`);
++  }
++  
+   if (!response.ok) {
+     const error = await response.json().catch(() => ({}));
+     throw new Error(error.detail || 'Quiz yüklenemedi');
+@@ -182,11 +190,40 @@ export async function getEpisodeQuiz(episodeId: number): Promise<QuizResponse> {
+ }
+ 
+ export async function getMixedQuiz(): Promise<QuizResponse> {
+-  const response = await fetch(`${API_URL}/api/quiz/mixed`);
++  // Try new endpoint first
++  let response = await fetch(`${API_URL}/api/quiz/mixed`);
++  
+   if (!response.ok) {
+-    const error = await response.json().catch(() => ({}));
+-    throw new Error(error.detail || 'Quiz yüklenemedi');
++    // Fallback: fetch all episodes and combine questions
++    console.log('[API] Mixed endpoint not found, using fallback...');
++    const episodes = await getEpisodes();
++    const allQuestions: any[] = [];
++    
++    for (const ep of episodes.slice(0, 5)) { // Limit to first 5 episodes for performance
++      try {
++        const quiz = await getEpisodeQuiz(ep.id);
++        allQuestions.push(...quiz.questions);
++      } catch (e) {
++        console.log(`[API] Could not fetch episode ${ep.id}`);
++      }
++    }
++    
++    // Shuffle questions
++    for (let i = allQuestions.length - 1; i > 0; i--) {
++      const j = Math.floor(Math.random() * (i + 1));
++      [allQuestions[i], allQuestions[j]] = [allQuestions[j], allQuestions[i]];
++    }
++    
++    return {
++      episode_id: null,
++      episode_name: 'Karışık Mod',
++      questions: allQuestions,
++      total_questions: allQuestions.length,
++      max_possible_score: allQuestions.reduce((sum, q) => sum + q.points + 5, 0),
++      mode: 'mixed'
++    };
+   }
++  
+   const data = await response.json();
+   return normalizeQuizResponse(data);
+ }
 diff --git a/model.patch b/model.patch
-index 55d97f4..e69de29 100644
+index e8d1219..e69de29 100644
 --- a/model.patch
 +++ b/model.patch
-@@ -1,24 +0,0 @@
+@@ -1,53 +0,0 @@
+-diff --git a/model.patch b/model.patch
+-index 55d97f4..e69de29 100644
+---- a/model.patch
+-+++ b/model.patch
+-@@ -1,24 +0,0 @@
+--diff --git a/test_result.md b/test_result.md
+--index d858bdf..37e6a16 100644
+----- a/test_result.md
+--+++ b/test_result.md
+--@@ -140,6 +140,9 @@ backend:
+--       - working: true
+--         agent: "main"
+--         comment: "GET /api/quiz/{episode_id} returns random questions with shuffled options"
+--+      - working: true
+--+        agent: "testing"
+--+        comment: "COMPREHENSIVE TESTING COMPLETED: All 17 tests passed. Verified correct_option format (A,B,C,D), options array structure (4 items with proper IDs), correct_option matches options array, answer validation logic works correctly. Tested with episodes 1&2, different question counts (1,2,3,5). Quiz API functioning perfectly."
+--         
+--   - task: "Leaderboard API - Save and Retrieve Scores"
+--     implemented: true
+--@@ -229,4 +232,6 @@ test_plan:
+-- 
+-- agent_communication:
+--   - agent: "main"
+---    message: "MVP complete - All core features implemented and manually tested"
+--\ No newline at end of file
+--+    message: "MVP complete - All core features implemented and manually tested"
+--+  - agent: "testing"
+--+    message: "QUIZ API TESTING COMPLETED SUCCESSFULLY: Comprehensive testing of Quiz API correct_option functionality completed. All 17 tests passed including: correct_option format validation (A,B,C,D), options array structure verification (4 items with proper IDs), correct_option matching with options array, answer validation logic, and quiz data completeness. Tested multiple episodes and question counts. Quiz API is working perfectly - no issues found."
+--\ No newline at end of file
 -diff --git a/test_result.md b/test_result.md
--index d858bdf..37e6a16 100644
+-index e96073e..9c43d47 100644
 ---- a/test_result.md
 -+++ b/test_result.md
--@@ -140,6 +140,9 @@ backend:
+-@@ -143,6 +143,9 @@ backend:
 -       - working: true
--         agent: "main"
--         comment: "GET /api/quiz/{episode_id} returns random questions with shuffled options"
+-         agent: "testing"
+-         comment: "COMPREHENSIVE TESTING COMPLETED: All 17 tests passed. Verified correct_option format (A,B,C,D), options array structure (4 items with proper IDs), correct_option matches options array, answer validation logic works correctly. Tested with episodes 1&2, different question counts (1,2,3,5). Quiz API functioning perfectly."
 -+      - working: true
 -+        agent: "testing"
--+        comment: "COMPREHENSIVE TESTING COMPLETED: All 17 tests passed. Verified correct_option format (A,B,C,D), options array structure (4 items with proper IDs), correct_option matches options array, answer validation logic works correctly. Tested with episodes 1&2, different question counts (1,2,3,5). Quiz API functioning perfectly."
+-+        comment: "ANSWER VALIDATION BUG INVESTIGATION COMPLETED: Ran 16 comprehensive tests focusing on the reported 'all answers marked correct' bug. ALL TESTS PASSED. Backend API is returning correct data structure: correct_option is always A/B/C/D string, options array has exactly 4 items with proper IDs, correct_option matches option IDs, answer validation logic works correctly. Tested specific endpoints /api/quiz/1?count=5 and /api/quiz/2?count=3 as requested. Randomization works with data integrity maintained. NO BACKEND ISSUES found - the bug is likely in frontend answer validation logic."
 -         
 -   - task: "Leaderboard API - Save and Retrieve Scores"
 -     implemented: true
--@@ -229,4 +232,6 @@ test_plan:
-- 
-- agent_communication:
+-@@ -242,4 +245,6 @@ agent_communication:
+-   - agent: "testing"
+-     message: "QUIZ API TESTING COMPLETED SUCCESSFULLY: Comprehensive testing of Quiz API correct_option functionality completed. All 17 tests passed including: correct_option format validation (A,B,C,D), options array structure verification (4 items with proper IDs), correct_option matching with options array, answer validation logic, and quiz data completeness. Tested multiple episodes and question counts. Quiz API is working perfectly - no issues found."
 -   - agent: "main"
---    message: "MVP complete - All core features implemented and manually tested"
+--    message: "CRITICAL BUG FIX: User reported ALL answers showing as correct. Fixed by adding string normalization (toUpperCase/trim) for option ID comparisons in both handleAnswer function and options rendering. The issue was likely a type or case mismatch between option.id and correct_option values. Please verify backend API returns correct data format."
 -\ No newline at end of file
--+    message: "MVP complete - All core features implemented and manually tested"
+-+    message: "CRITICAL BUG FIX: User reported ALL answers showing as correct. Fixed by adding string normalization (toUpperCase/trim) for option ID comparisons in both handleAnswer function and options rendering. The issue was likely a type or case mismatch between option.id and correct_option values. Please verify backend API returns correct data format."
 -+  - agent: "testing"
--+    message: "QUIZ API TESTING COMPLETED SUCCESSFULLY: Comprehensive testing of Quiz API correct_option functionality completed. All 17 tests passed including: correct_option format validation (A,B,C,D), options array structure verification (4 items with proper IDs), correct_option matching with options array, answer validation logic, and quiz data completeness. Tested multiple episodes and question counts. Quiz API is working perfectly - no issues found."
+-+    message: "BACKEND VERIFICATION COMPLETE: Investigated the 'ALL answers marked correct' bug by running 16 comprehensive tests on Quiz API endpoints /api/quiz/1?count=5 and /api/quiz/2?count=3. ALL TESTS PASSED with no critical issues found. Backend is returning perfect data structure: correct_option always A/B/C/D strings, options array has exactly 4 items with proper IDs A/B/C/D, correct_option matches option IDs correctly. Answer validation logic simulation confirms only 1 correct answer per question. The backend is NOT the source of the bug - issue must be in frontend validation logic despite the main agent's fix attempt."
 -\ No newline at end of file
-diff --git a/test_result.md b/test_result.md
-index e96073e..9c43d47 100644
---- a/test_result.md
-+++ b/test_result.md
-@@ -143,6 +143,9 @@ backend:
-       - working: true
-         agent: "testing"
-         comment: "COMPREHENSIVE TESTING COMPLETED: All 17 tests passed. Verified correct_option format (A,B,C,D), options array structure (4 items with proper IDs), correct_option matches options array, answer validation logic works correctly. Tested with episodes 1&2, different question counts (1,2,3,5). Quiz API functioning perfectly."
-+      - working: true
-+        agent: "testing"
-+        comment: "ANSWER VALIDATION BUG INVESTIGATION COMPLETED: Ran 16 comprehensive tests focusing on the reported 'all answers marked correct' bug. ALL TESTS PASSED. Backend API is returning correct data structure: correct_option is always A/B/C/D string, options array has exactly 4 items with proper IDs, correct_option matches option IDs, answer validation logic works correctly. Tested specific endpoints /api/quiz/1?count=5 and /api/quiz/2?count=3 as requested. Randomization works with data integrity maintained. NO BACKEND ISSUES found - the bug is likely in frontend answer validation logic."
-         
-   - task: "Leaderboard API - Save and Retrieve Scores"
-     implemented: true
-@@ -242,4 +245,6 @@ agent_communication:
-   - agent: "testing"
-     message: "QUIZ API TESTING COMPLETED SUCCESSFULLY: Comprehensive testing of Quiz API correct_option functionality completed. All 17 tests passed including: correct_option format validation (A,B,C,D), options array structure verification (4 items with proper IDs), correct_option matching with options array, answer validation logic, and quiz data completeness. Tested multiple episodes and question counts. Quiz API is working perfectly - no issues found."
-   - agent: "main"
--    message: "CRITICAL BUG FIX: User reported ALL answers showing as correct. Fixed by adding string normalization (toUpperCase/trim) for option ID comparisons in both handleAnswer function and options rendering. The issue was likely a type or case mismatch between option.id and correct_option values. Please verify backend API returns correct data format."
-\ No newline at end of file
-+    message: "CRITICAL BUG FIX: User reported ALL answers showing as correct. Fixed by adding string normalization (toUpperCase/trim) for option ID comparisons in both handleAnswer function and options rendering. The issue was likely a type or case mismatch between option.id and correct_option values. Please verify backend API returns correct data format."
-+  - agent: "testing"
-+    message: "BACKEND VERIFICATION COMPLETE: Investigated the 'ALL answers marked correct' bug by running 16 comprehensive tests on Quiz API endpoints /api/quiz/1?count=5 and /api/quiz/2?count=3. ALL TESTS PASSED with no critical issues found. Backend is returning perfect data structure: correct_option always A/B/C/D strings, options array has exactly 4 items with proper IDs A/B/C/D, correct_option matches option IDs correctly. Answer validation logic simulation confirms only 1 correct answer per question. The backend is NOT the source of the bug - issue must be in frontend validation logic despite the main agent's fix attempt."
-\ No newline at end of file
