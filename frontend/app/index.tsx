@@ -130,6 +130,10 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: 'rgba(0,0,0,0.7)',
   },
+  titleContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
