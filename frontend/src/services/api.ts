@@ -332,32 +332,85 @@ export async function submitMixedScore(
 
 export async function getGeneralLeaderboard(): Promise<LeaderboardResponse> {
   const username = await getUsername();
+  
+  // Try new endpoint first
   let url = `${API_URL}/api/leaderboard/general`;
   if (username) url += `?player_name=${encodeURIComponent(username)}`;
   
-  const response = await fetch(url);
-  if (!response.ok) throw new Error('Liderlik tablosu yüklenemedi');
-  return response.json();
+  let response = await fetch(url);
+  
+  // If new endpoint works, return the data
+  if (response.ok) {
+    return response.json();
+  }
+  
+  // Fallback: Old API doesn't have general leaderboard, aggregate from episode 1
+  console.log('[API] General leaderboard not found, using episode 1 fallback');
+  try {
+    const episodeData = await getEpisodeLeaderboard(1);
+    return episodeData;
+  } catch {
+    return { entries: [], player_rank: null, player_score: null, total_players: 0 };
+  }
 }
 
 export async function getEpisodeLeaderboard(episodeId: number): Promise<LeaderboardResponse> {
   const username = await getUsername();
+  
+  // Try new endpoint first
   let url = `${API_URL}/api/leaderboard/episode/${episodeId}`;
   if (username) url += `?player_name=${encodeURIComponent(username)}`;
   
-  const response = await fetch(url);
-  if (!response.ok) throw new Error('Liderlik tablosu yüklenemedi');
-  return response.json();
+  let response = await fetch(url);
+  
+  if (response.ok) {
+    return response.json();
+  }
+  
+  // Fallback to old endpoint format: /api/leaderboard/{episode_id}
+  console.log('[API] Trying legacy episode leaderboard endpoint...');
+  url = `${API_URL}/api/leaderboard/${episodeId}`;
+  if (username) url += `?player_name=${encodeURIComponent(username)}`;
+  
+  response = await fetch(url);
+  
+  if (!response.ok) {
+    console.warn('[API] Leaderboard fetch failed');
+    return { entries: [], player_rank: null, player_score: null, total_players: 0 };
+  }
+  
+  // Transform old format to new format
+  const oldData = await response.json();
+  const entries = (oldData.top_10 || []).map((entry: any, index: number) => ({
+    rank: entry.rank || index + 1,
+    player_name: entry.player_name || 'Anonim',
+    score: Math.round(entry.score || 0),
+  }));
+  
+  return {
+    entries,
+    player_rank: oldData.player_rank || null,
+    player_score: oldData.player_entry?.score ? Math.round(oldData.player_entry.score) : null,
+    total_players: entries.length,
+  };
 }
 
 export async function getMixedLeaderboard(): Promise<LeaderboardResponse> {
   const username = await getUsername();
+  
+  // Try new endpoint first
   let url = `${API_URL}/api/leaderboard/mixed`;
   if (username) url += `?player_name=${encodeURIComponent(username)}`;
   
-  const response = await fetch(url);
-  if (!response.ok) throw new Error('Liderlik tablosu yüklenemedi');
-  return response.json();
+  let response = await fetch(url);
+  
+  if (response.ok) {
+    return response.json();
+  }
+  
+  // Fallback: Old API doesn't have mixed leaderboard
+  console.log('[API] Mixed leaderboard not found, returning empty');
+  return { entries: [], player_rank: null, player_score: null, total_players: 0 };
 }
 
 export async function getPlayerStats(): Promise<PlayerStats | null> {
