@@ -14,44 +14,32 @@ interface BannerAdProps {
 
 // Native version - real AdMob ads
 export function BannerAd({ style }: BannerAdProps) {
-  const [error, setError] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
 
-  useEffect(() => {
-    console.log('[BannerAd] Using production ID:', BANNER_AD_UNIT_ID);
-  }, []);
+  // Don't render anything if ad failed to load (no-fill is normal)
+  if (hasError) {
+    return null;
+  }
 
   return (
     <View style={[styles.container, style]}>
-      {!loaded && !error && (
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Reklam yükleniyor...</Text>
-        </View>
-      )}
-      
-      {error ? (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      ) : (
-        <GoogleBannerAd
-          unitId={BANNER_AD_UNIT_ID}
-          size={BannerAdSize.BANNER}
-          requestOptions={{
-            requestNonPersonalizedAdsOnly: true,
-          }}
-          onAdLoaded={() => {
-            console.log('[BannerAd] ✅ Loaded successfully');
-            setLoaded(true);
-            setError(null);
-          }}
-          onAdFailedToLoad={(err) => {
-            console.warn('[BannerAd] ❌ Failed:', err.code, err.message);
-            setError(err.message || 'Reklam yüklenemedi');
-            setLoaded(false);
-          }}
-        />
-      )}
+      <GoogleBannerAd
+        unitId={BANNER_AD_UNIT_ID}
+        size={BannerAdSize.BANNER}
+        requestOptions={{
+          requestNonPersonalizedAdsOnly: true,
+        }}
+        onAdLoaded={() => {
+          console.log('[BannerAd] ✅ Loaded successfully');
+          setLoaded(true);
+        }}
+        onAdFailedToLoad={(err) => {
+          // no-fill is normal - just hide the ad space
+          console.log('[BannerAd] No ad available:', err.code);
+          setHasError(true);
+        }}
+      />
     </View>
   );
 }
@@ -63,26 +51,5 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     minHeight: 50,
     width: '100%',
-  },
-  loadingContainer: {
-    height: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-  },
-  loadingText: {
-    color: '#666',
-    fontSize: 12,
-  },
-  errorContainer: {
-    height: 50,
-    backgroundColor: 'rgba(0,0,0,0.03)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-  },
-  errorText: {
-    color: '#888',
-    fontSize: 10,
   },
 });
