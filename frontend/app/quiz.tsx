@@ -152,8 +152,7 @@ export default function QuizScreen() {
   const handleTimeout = () => {
     if (answerState !== 'none') return;
     setAnswerState('wrong');
-    loseLife();
-    setTimeout(nextQuestion, 1500);
+    handleWrongAnswer();
   };
 
   const handleAnswer = (optionId: string) => {
@@ -168,6 +167,8 @@ export default function QuizScreen() {
     const normalizedSelected = String(optionId).trim().toUpperCase();
     const normalizedCorrect = String(question.correct_option).trim().toUpperCase();
     const isCorrect = normalizedSelected === normalizedCorrect;
+    
+    console.log('[Quiz] Answer:', { selected: normalizedSelected, correct: normalizedCorrect, isCorrect });
     
     setSelectedAnswer(optionId);
     setAnswerState(isCorrect ? 'correct' : 'wrong');
@@ -190,23 +191,43 @@ export default function QuizScreen() {
         Animated.timing(scaleAnim, { toValue: 1.05, duration: 100, useNativeDriver: true }),
         Animated.timing(scaleAnim, { toValue: 1, duration: 100, useNativeDriver: true }),
       ]).start();
-    } else {
-      playWrongSound();
-      if (vibrationEnabled && Platform.OS !== 'web') {
-        Vibration.vibrate(200);
-      }
-      loseLife();
       
-      // Shake animation for wrong
-      Animated.sequence([
-        Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
-      ]).start();
+      // Go to next question after delay
+      setTimeout(nextQuestion, 1500);
+    } else {
+      handleWrongAnswer();
+    }
+  };
+
+  const handleWrongAnswer = () => {
+    playWrongSound();
+    if (vibrationEnabled && Platform.OS !== 'web') {
+      Vibration.vibrate(200);
     }
     
-    setTimeout(nextQuestion, 1500);
+    // Shake animation for wrong
+    Animated.sequence([
+      Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
+    ]).start();
+    
+    // Check lives BEFORE decrementing to handle game over properly
+    const newLives = lives - 1;
+    console.log('[Quiz] Lives:', { current: lives, new: newLives });
+    
+    if (newLives <= 0) {
+      // Game over - no more lives
+      setLives(0);
+      setGameOver(true);
+      console.log('[Quiz] Game Over! No lives left');
+      setTimeout(() => endGame(), 1500);
+    } else {
+      // Still have lives - continue
+      setLives(newLives);
+      setTimeout(nextQuestion, 1500);
+    }
   };
 
   const showBonusAnimation = () => {
@@ -216,15 +237,6 @@ export default function QuizScreen() {
       Animated.delay(500),
       Animated.timing(bonusAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
     ]).start();
-  };
-
-  const loseLife = () => {
-    const newLives = lives - 1;
-    setLives(newLives);
-    if (newLives <= 0) {
-      setGameOver(true);
-      endGame();
-    }
   };
 
   const nextQuestion = () => {
