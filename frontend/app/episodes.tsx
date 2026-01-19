@@ -118,6 +118,16 @@ export default function EpisodesScreen() {
         <View style={styles.loading}>
           <ActivityIndicator size="large" color="#009688" />
         </View>
+      ) : error ? (
+        <View style={styles.errorContainer}>
+          <Ionicons name="cloud-offline" size={60} color="#666" />
+          <Text style={styles.errorText}>Bölümler yüklenemedi</Text>
+          <Text style={styles.errorSubtext}>İnternet bağlantınızı kontrol edin</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={loadData}>
+            <Ionicons name="refresh" size={20} color="#fff" />
+            <Text style={styles.retryText}>Tekrar Dene</Text>
+          </TouchableOpacity>
+        </View>
       ) : (
         <FlatList
           data={episodes}
