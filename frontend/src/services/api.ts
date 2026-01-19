@@ -167,9 +167,24 @@ function normalizeQuizResponse(data: any): QuizResponse {
 }
 
 export async function getEpisodes(): Promise<Episode[]> {
-  const response = await fetch(`${API_URL}/api/episodes`);
-  if (!response.ok) throw new Error('Bölümler yüklenemedi');
-  return response.json();
+  try {
+    console.log('[API] Fetching episodes from:', `${API_URL}/api/episodes`);
+    const response = await fetch(`${API_URL}/api/episodes`);
+    console.log('[API] Episodes response status:', response.status);
+    
+    if (!response.ok) {
+      console.error('[API] Episodes fetch failed:', response.status);
+      throw new Error('Bölümler yüklenemedi');
+    }
+    
+    const data = await response.json();
+    console.log('[API] Episodes loaded:', data.length);
+    return data;
+  } catch (error) {
+    console.error('[API] Episodes error:', error);
+    // Return empty array instead of throwing to prevent crash
+    return [];
+  }
 }
 
 export async function getEpisodeQuiz(episodeId: number): Promise<QuizResponse> {
