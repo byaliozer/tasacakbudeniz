@@ -18,6 +18,7 @@ export default function EpisodesScreen() {
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [episodeScores, setEpisodeScores] = useState<Record<number, number>>({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -25,17 +26,26 @@ export default function EpisodesScreen() {
   }, []);
 
   const loadData = async () => {
+    setLoading(true);
+    setError(false);
     try {
       const [eps, stats] = await Promise.all([
         getEpisodes(),
         getPlayerStats()
       ]);
-      setEpisodes(eps);
+      
+      if (eps.length === 0) {
+        setError(true);
+      } else {
+        setEpisodes(eps);
+      }
+      
       if (stats) {
         setEpisodeScores(stats.episode_scores || {});
       }
     } catch (e) {
       console.error('Error loading episodes:', e);
+      setError(true);
     }
     setLoading(false);
   };
