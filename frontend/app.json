@@ -30,7 +30,7 @@
     },
     "android": {
       "package": "com.busegame.tasacakbudeniz",
-      "versionCode": 3,
+      "versionCode": 4,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#1CB0F6"
