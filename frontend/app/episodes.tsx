@@ -236,4 +236,36 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#ffc107',
   },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  errorText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#fff',
+    marginTop: 16,
+  },
+  errorSubtext: {
+    fontSize: 14,
+    color: '#888',
+    marginTop: 8,
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#009688',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 24,
+    gap: 8,
+  },
+  retryText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+  },
 });
