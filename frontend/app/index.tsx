@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -11,11 +11,27 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { BannerAd } from '../src/components/BannerAd';
+import { getEpisodes } from '../src/services/api';
 
 const { width } = Dimensions.get('window');
 
 export default function MainMenu() {
   const router = useRouter();
+  const [openEpisodeCount, setOpenEpisodeCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    loadEpisodeCount();
+  }, []);
+
+  const loadEpisodeCount = async () => {
+    try {
+      const episodes = await getEpisodes();
+      const openEpisodes = episodes.filter(ep => !ep.is_locked);
+      setOpenEpisodeCount(openEpisodes.length);
+    } catch (error) {
+      console.error('Error loading episode count:', error);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
