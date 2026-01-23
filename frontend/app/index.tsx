@@ -12,11 +12,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { BannerAd } from '../src/components/BannerAd';
 import { getEpisodes } from '../src/services/api';
+import { useAds } from '../src/context/AdContext';
 
 const { width } = Dimensions.get('window');
 
 export default function MainMenu() {
   const router = useRouter();
+  const { showInterstitial } = useAds();
   const [openEpisodeCount, setOpenEpisodeCount] = useState<number | null>(null);
 
   useEffect(() => {
@@ -31,6 +33,12 @@ export default function MainMenu() {
     } catch (error) {
       console.error('Error loading episode count:', error);
     }
+  };
+
+  const handleSettingsPress = async () => {
+    // Show interstitial ad before going to settings
+    await showInterstitial();
+    router.push('/settings');
   };
 
   return (
