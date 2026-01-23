@@ -143,7 +143,7 @@ export default function ResultScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         {/* New Record Badge */}
-        {isNewRecord && (
+        {isNewRecordAfterMultiply && (
           <Animated.View style={[styles.newRecordBadge, { opacity: sparkleAnim }]}>
             <Ionicons name="trophy" size={24} color="#ffc107" />
             <Text style={styles.newRecordText}>YENİ REKOR!</Text>
