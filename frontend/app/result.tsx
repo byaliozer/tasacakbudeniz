@@ -5,12 +5,14 @@ import {
   TouchableOpacity,
   StyleSheet,
   Animated,
+  Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAds } from '../src/context/AdContext';
 import { BannerAd } from '../src/components/BannerAd';
+import { submitEpisodeScore, submitMixedScore } from '../src/services/api';
 import { useEffect, useRef } from 'react';
 
 export default function ResultScreen() {
@@ -26,10 +28,12 @@ export default function ResultScreen() {
   const totalQuestions = parseInt(params.totalQuestions as string) || 25;
   const questionsAnswered = parseInt(params.questionsAnswered as string) || 0;
   const isNewRecord = params.isNewRecord === '1';
-  const bestScore = parseInt(params.bestScore as string) || initialScore;
+  const initialBestScore = parseInt(params.bestScore as string) || initialScore;
   
   const [score, setScore] = useState(initialScore);
+  const [currentBestScore, setCurrentBestScore] = useState(initialBestScore);
   const [multiplied, setMultiplied] = useState(false);
+  const [isNewRecordAfterMultiply, setIsNewRecordAfterMultiply] = useState(isNewRecord);
   
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const sparkleAnim = useRef(new Animated.Value(0)).current;
@@ -61,9 +65,11 @@ export default function ResultScreen() {
   const handleMultiplyScore = async () => {
     if (multiplied) return;
     
-    const success = await showRewardedAd(() => {
+    const success = await showRewardedAd(async () => {
       // User earned reward - multiply score by 3
-      const newScore = score * 3;
+      const newScore = initialScore * 3;
+      const newSpeedBonus = speedBonus * 3;
+      
       setScore(newScore);
       setMultiplied(true);
       
@@ -72,6 +78,36 @@ export default function ResultScreen() {
         Animated.timing(multiplierAnim, { toValue: 1.3, duration: 200, useNativeDriver: true }),
         Animated.timing(multiplierAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
       ]).start();
+      
+      // Submit the new multiplied score to API
+      try {
+        console.log('[Result] Submitting 3X score:', newScore);
+        let result;
+        
+        if (mode === 'mixed') {
+          result = await submitMixedScore(newScore, correctCount, newSpeedBonus, questionsAnswered);
+        } else {
+          result = await submitEpisodeScore(episodeId, newScore, correctCount, newSpeedBonus);
+        }
+        
+        console.log('[Result] 3X Score submitted:', result);
+        
+        // Update best score if it's a new record
+        if (result.is_new_record) {
+          setCurrentBestScore(result.best_score);
+          setIsNewRecordAfterMultiply(true);
+          
+          // Start sparkle animation for new record
+          Animated.loop(
+            Animated.sequence([
+              Animated.timing(sparkleAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+              Animated.timing(sparkleAnim, { toValue: 0.5, duration: 500, useNativeDriver: true }),
+            ])
+          ).start();
+        }
+      } catch (error) {
+        console.error('[Result] Error submitting 3X score:', error);
+      }
     });
     
     if (!success) {
