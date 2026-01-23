@@ -209,7 +209,7 @@ export default function ResultScreen() {
           <Text style={styles.bestScoreLabel}>
             {mode === 'episode' ? `${episodeId}. Bölüm En İyi Skor` : 'Karışık Mod En İyi'}
           </Text>
-          <Text style={styles.bestScoreValue}>{bestScore}</Text>
+          <Text style={styles.bestScoreValue}>{currentBestScore}</Text>
         </View>
 
         {/* Buttons */}
