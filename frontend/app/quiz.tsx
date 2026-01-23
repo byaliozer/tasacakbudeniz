@@ -514,6 +514,9 @@ export default function QuizScreen() {
           );
         })}
       </Animated.View>
+      
+      {/* Banner Ad at bottom */}
+      <BannerAd />
     </SafeAreaView>
   );
 }
