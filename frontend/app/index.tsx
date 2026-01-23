@@ -62,7 +62,7 @@ export default function MainMenu() {
             </View>
             <View style={styles.gameModeTextContainer}>
               <Text style={styles.gameModeTitle}>Bölüm Modu</Text>
-              <Text style={styles.gameModeHint}>14 bölüm • Her biri 25 soru</Text>
+              <Text style={styles.gameModeHint}>{openEpisodeCount ? `${openEpisodeCount} bölüm` : 'Yükleniyor...'} • Her biri 25 soru</Text>
             </View>
             <Ionicons name="chevron-forward" size={24} color="rgba(255,255,255,0.6)" />
           </TouchableOpacity>
