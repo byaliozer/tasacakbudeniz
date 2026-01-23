@@ -109,7 +109,7 @@ export default function MainMenu() {
 
           <TouchableOpacity
             style={styles.utilityButton}
-            onPress={() => router.push('/settings')}
+            onPress={handleSettingsPress}
             activeOpacity={0.7}
           >
             <Ionicons name="settings" size={22} color="#888" />
