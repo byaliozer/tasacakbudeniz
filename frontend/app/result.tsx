@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -16,23 +16,27 @@ import { useEffect, useRef } from 'react';
 export default function ResultScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
-  const { showInterstitial } = useAds();
+  const { showInterstitial, showRewardedAd, isRewardedReady } = useAds();
   
   const mode = params.mode as string || 'episode';
   const episodeId = parseInt(params.episodeId as string) || 1;
-  const score = parseInt(params.score as string) || 0;
+  const initialScore = parseInt(params.score as string) || 0;
   const correctCount = parseInt(params.correctCount as string) || 0;
   const speedBonus = parseInt(params.speedBonus as string) || 0;
   const totalQuestions = parseInt(params.totalQuestions as string) || 25;
   const questionsAnswered = parseInt(params.questionsAnswered as string) || 0;
   const isNewRecord = params.isNewRecord === '1';
-  const bestScore = parseInt(params.bestScore as string) || score;
+  const bestScore = parseInt(params.bestScore as string) || initialScore;
+  
+  const [score, setScore] = useState(initialScore);
+  const [multiplied, setMultiplied] = useState(false);
   
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const sparkleAnim = useRef(new Animated.Value(0)).current;
+  const multiplierAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    // Show interstitial ad
+    // Show interstitial ad when result screen opens
     showInterstitial();
     
     // Animate score
@@ -53,6 +57,27 @@ export default function ResultScreen() {
       ).start();
     }
   }, []);
+
+  const handleMultiplyScore = async () => {
+    if (multiplied) return;
+    
+    const success = await showRewardedAd(() => {
+      // User earned reward - multiply score by 3
+      const newScore = score * 3;
+      setScore(newScore);
+      setMultiplied(true);
+      
+      // Animate the multiplier
+      Animated.sequence([
+        Animated.timing(multiplierAnim, { toValue: 1.3, duration: 200, useNativeDriver: true }),
+        Animated.timing(multiplierAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+      ]).start();
+    });
+    
+    if (!success) {
+      console.log('Rewarded ad not ready');
+    }
+  };
 
   const handleNextEpisode = () => {
     if (episodeId < 14) {
@@ -89,10 +114,29 @@ export default function ResultScreen() {
           </Animated.View>
         )}
 
-        {/* Score */}
+        {/* Score with 3X Button */}
         <Animated.View style={[styles.scoreContainer, { transform: [{ scale: scaleAnim }] }]}>
           <Text style={styles.scoreLabel}>SKOR</Text>
-          <Text style={styles.scoreValue}>{score}</Text>
+          <View style={styles.scoreRow}>
+            <Animated.Text style={[styles.scoreValue, { transform: [{ scale: multiplierAnim }] }]}>
+              {score}
+            </Animated.Text>
+            {!multiplied && score > 0 && (
+              <TouchableOpacity 
+                style={[styles.multiplyButton, !isRewardedReady && styles.multiplyButtonDisabled]} 
+                onPress={handleMultiplyScore}
+                disabled={!isRewardedReady}
+              >
+                <Ionicons name="videocam" size={18} color="#fff" />
+                <Text style={styles.multiplyButtonText}>3X</Text>
+              </TouchableOpacity>
+            )}
+            {multiplied && (
+              <View style={styles.multipliedBadge}>
+                <Text style={styles.multipliedText}>×3</Text>
+              </View>
+            )}
+          </View>
         </Animated.View>
 
         {/* Stats */}
@@ -199,8 +243,42 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 2,
   },
+  scoreRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
   scoreValue: {
     fontSize: 72,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  multiplyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#e91e63',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 4,
+  },
+  multiplyButtonDisabled: {
+    backgroundColor: '#666',
+    opacity: 0.5,
+  },
+  multiplyButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  multipliedBadge: {
+    backgroundColor: '#4caf50',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  multipliedText: {
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#fff',
   },
