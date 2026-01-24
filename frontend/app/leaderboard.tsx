@@ -14,6 +14,7 @@ import {
   getGeneralLeaderboard,
   getEpisodeLeaderboard,
   getMixedLeaderboard,
+  getEpisodes,
   LeaderboardResponse,
   LeaderboardEntry,
 } from '../src/services/api';
@@ -30,12 +31,30 @@ export default function LeaderboardScreen() {
   
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
   const [selectedEpisode, setSelectedEpisode] = useState(initialEpisode);
+  const [maxEpisode, setMaxEpisode] = useState(15); // Default, will be updated from API
   const [data, setData] = useState<LeaderboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Load max episode count from API
+    loadMaxEpisode();
+  }, []);
+
+  useEffect(() => {
     loadData();
   }, [activeTab, selectedEpisode]);
+
+  const loadMaxEpisode = async () => {
+    try {
+      const episodes = await getEpisodes();
+      const openEpisodes = episodes.filter(ep => !ep.is_locked);
+      if (openEpisodes.length > 0) {
+        setMaxEpisode(openEpisodes.length);
+      }
+    } catch (error) {
+      console.error('Error loading max episode:', error);
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
