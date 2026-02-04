@@ -1,106 +1,109 @@
 <analysis>
-**original_problem_statement**: The user wants to create an interactive quiz mobile application for the Turkish TV series Taşacak Bu Deniz. After initial development, the user requested a complete redesign of the game's structure, UI, and scoring logic.
+**original_problem_statement**: The user is developing an interactive quiz mobile application, Taşacak Bu Deniz. After initial development and bug fixes, the user is now preparing the application for both Google Play and Apple App Store release. Key recent requests include fixing critical bugs related to scoring and leaderboards, resolving build and deployment issues for Android (AAB), preparing the app for iOS submission (including adding a guest login), and implementing a full suite of AdMob advertisements (banner, interstitial, rewarded).
 
 **PRODUCT REQUIREMENTS**:
-- **Game Modes**:
-  - **Episode Mode**: 14+ episodes, 25 questions each, 20-second timer, 3 lives. A wrong answer costs a life. The game ends when lives run out.
-  - **Mixed Mode**: An endless mode with all questions shuffled. The run ends when 3 lives are lost.
-- **Scoring**:
-  - **Episode Mode**: Saves the player's *best score* for each episode. The  is the sum of all best episode scores.
-  - **Mixed Mode**: Saves the player's single *best run score*.
-  - **Speed Bonus**: +5 points for answering within the first 5 seconds.
-- **Leaderboards**: A single screen with 3 tabs:
-  - **General Leaderboard**: Ranks players by .
-  - **Episode Leaderboard**: A dropdown to view best scores for a specific episode.
-  - **Mixed Mode Leaderboard**: Ranks players by their best run score in mixed mode.
-- **UI/UX**:
-  - **Main Menu**: Redesigned with a top banner, two large buttons for game modes, and two smaller buttons at the bottom for Leaderboard and Settings.
-  - **Settings**: Sound On/Off, Vibration On/Off, Change Username, and links for Privacy Policy and Contact.
-  - **Username**: Must be requested only once on the first app launch. Scores are saved automatically afterward.
-  - **Quiz Screen**: Must have an exit button with a confirmation modal that pauses the game.
-  - **Dynamic Episodes**: The app must dynamically load all episodes from a Google Sheet, including handling a locked state.
+- **Game Modes**: Episode Mode (per-episode high scores) and Mixed Mode (endless, single best score).
+- **Scoring**: A  is the sum of all best episode scores. Mixed mode has its own separate best score.
+- **Leaderboards**: A 3-tab screen for General, Episode, and Mixed Mode leaderboards.
+- **Dynamic Content**: All episodes and questions are loaded dynamically from a Google Sheet. The app must automatically adapt to new episodes being added without requiring a code change.
 - **Monetization**:
-  - Integrate Google AdMob to display a banner ad on most screens.
-  - Show an interstitial (full-screen) ad on game over.
+  - Banner ads on most screens, including the quiz screen.
+  - Interstitial ads on game over and when navigating to the settings screen.
+  - A rewarded (3X) ad on the result screen to triple the player's score for that run.
+- **Build & Deployment**:
+  - The application must be deployable to a stable, 24/7 backend.
+  - It must produce a signed AAB file for Google Play.
+  - It must be configurable for an iOS build for the App Store.
+- **UX for App Store Review**:
+  - Add a Guest Login option to satisfy Apple's requirement for functionality without mandatory sign-up.
 
 **User's preferred language**: Türkçe
 
 **what currently exists?**
-A full-stack application with a FastAPI backend and an Expo (React Native) frontend. A major redesign has been implemented to meet the new product requirements, including new game modes, a new backend scoring system, a redesigned UI, and a one-time username entry flow. The backend has also been updated to dynamically load any number of episodes from the connected Google Sheet.
-
-However, the latest native APK tested by the user has critical bugs preventing gameplay and monetization.
+A full-stack application with a FastAPI backend and an Expo (React Native) frontend. The backend is deployed to a stable production URL and dynamically loads content from Google Sheets. The frontend has been significantly improved to fix critical bugs, support the production backend, and add new features like rewarded ads and guest login. The Android build process for generating a signed AAB has been resolved. The project is now at a stage where it's being prepared for an initial iOS build.
 
 **Last working item**:
--   **Last item agent was working**: The agent was performing a final bug bash to address two critical issues reported by the user via a screen recording of the native app:
-    1.  The game does not end after 3 wrong answers.
-    2.  Neither banner nor interstitial ads are displaying.
-    The agent implemented fixes for both issues, culminating in an update to the interstitial ad logic in .
--   **Status**: USER VERIFICATION PENDING
--   **Agent Testing Done**: N (Fixes have been applied, but they address native-only bugs and have not been verified on a new APK).
--   **Which testing method agent to use?** A new native APK needs to be built using **EAS Build**. The user must then perform manual testing on the device.
--   **User Testing Done**: Y (The user provided a screen recording demonstrating the critical bugs in the previous build).
+-   **Last item agent was working**: The user requested the addition of iOS-specific AdMob ad unit IDs to ensure advertisements work on Apple devices. The agent acknowledged the request and was about to start the implementation.
+-   **Status**: NOT STARTED
+-   **Agent Testing Done**: N
+-   **Which testing method agent to use?** After implementation, a new iOS build () needs to be created using **EAS Build** and tested on a physical device or simulator.
+-   **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
--   **Issue 1: (P0) Game does not end after 3 wrong answers on native build.**
-    -   **Description**: In the native app, when a player makes three wrong answers, their lives decrease to zero, but the game does not end and transition to the result screen as it should. The player gets stuck in the quiz.
-    -   **Attempted fixes**: The agent identified a potential race condition/closure issue where the  state was not being read correctly within the  function. The latest fix involved introducing a  () in  to reliably track the current number of lives and trigger the game-over condition.
+-   **Issue 1: (P1) Banner ad shows no fill error on native build.**
+    -   **Description**: The user reported seeing a [googleMobileAds/error-code-no-fill] error message where the banner ad should be.
+    -   **Attempted fixes**: The agent updated  to hide this specific error message from the user, as it's an ad inventory issue from AdMob, not a code bug. This fix has not been verified in a new build.
     -   **Next debug checklist**:
-        1.  Instruct the user to build a new APK and test this scenario by deliberately answering incorrectly three times.
-        2.  If the issue persists, connect the device to a computer and inspect the native logs ( for Android) for the console logs added in  to trace the values of  and .
-        3.  Verify the  function is being called and that  is being executed.
-    -   **Why fix this issue and what will be achieved with the fix?**: This bug breaks the core gameplay loop, making both Episode and Mixed modes unplayable and preventing scores from being saved.
+        1.  Build a new APK/AAB.
+        2.  Verify that the space for the banner ad is now blank instead of showing the error text.
+        3.  Confirm with the user that this is the desired behavior when no ad is available.
+    -   **Why fix this issue and what will be achieved with the fix?**: Improves user experience by hiding technical error messages.
     -   **Status**: USER VERIFICATION PENDING
     -   **Is recurring issue?** Y
-    -   **Should Test frontend/backend/both after fix?** Frontend (via new APK).
-    -   **Blocked on other issue**: None
-
--   **Issue 2: (P1) Google AdMob ads (Banner & Interstitial) are not displaying on native build.**
-    -   **Description**: The banner ad shows a placeholder text (Reklam Alanı) instead of a real or test ad. The interstitial ad, which should appear on game over, is never shown.
-    -   **Attempted fixes**: The agent refactored the ad implementation to use platform-specific files ( and ), which is the correct approach. In the last attempt, the agent updated  and  to use official Google test ad unit IDs and to display error messages on-screen if an ad fails to load.
-    -   **Next debug checklist**:
-        1.  After building the new APK, check if test ads are now visible.
-        2.  If not, check the device logs () for any specific error messages from the  library.
-        3.  Double-check that the  file contains the correct .
-    -   **Why fix this issue and what will be achieved with the fix?**: Monetization is a primary requirement for the application.
-    -   **Status**: USER VERIFICATION PENDING
-    -   **Is recurring issue?** Y
-    -   **Should Test frontend/backend/both after fix?** Frontend (via new APK).
-    -   **Blocked on other issue**: None
-
--   **Issue 3: (P2) Production backend deployment is outdated.**
-    -   **Description**: The production backend () runs an older version of the code with a different API schema than the local development environment. This has caused numerous discrepancies between web preview testing and native APK behavior.
-    -   **Attempted fixes**: The agent implemented a robust workaround in . The code now attempts to call the new API endpoints and, on failure, falls back to the old endpoints, normalizing the data so the rest of the app receives a consistent data structure.
-    -   **Next debug checklist**: This is a temporary mitigation. The permanent solution is to update the production backend deployment to match the latest code in .
-    -   **Why fix this issue and what will be achieved with the fix?**: A unified API schema simplifies development and eliminates a major source of bugs.
-    -   **Status**: IN PROGRESS (Mitigated by a workaround).
-    -   **Is recurring issue?** Y
-    -   **Should Test frontend/backend/both after fix?** Backend (deployment).
+    -   **Should Test frontend/backend/both after fix?** Frontend (via new APK/AAB).
     -   **Blocked on other issue**: None
 
 **In progress Task List**:
-None. All current work is categorized under the issues above.
+None.
 
 **Upcoming and Future Tasks**
 - **Upcoming Tasks**:
-    - **P1: Verify UI/UX and Animations**: After the critical bugs are fixed, a full review of the UI/UX against the redesign document (Message 168) is needed. This includes verifying animations (shake on wrong answer, confetti, score bounce) and sound effects ( implementation).
-    - **P2: Implement Vibration**: The Settings screen has a toggle for Vibration, but the functionality () is not yet implemented in the quiz screen.
+  - **P0: Implement iOS AdMob IDs**:
+    - The user provided iOS-specific ad unit IDs for App ID, Banner, Interstitial, and Rewarded ads.
+    - **Plan**:
+        1.  Update  to include the iOS AdMob App ID under .
+        2.  Modify  to use the correct Interstitial and Rewarded ad unit IDs based on .
+        3.  Modify  to use the correct Banner ad unit ID based on .
+    - **Why?**: This is a critical step for monetizing the app on iOS.
+  - **P1: Finalize iOS Build and Submission**:
+    - After adding the iOS ad IDs, guide the user through the An Expo user account is required to proceed.
+
+Log in to EAS with email or username (exit and run eas login --help to see other login options)
+Input is required, but stdin is not readable. Failed to display prompt: Email or username process.
+    - Remind the user that EAS will handle the creation and management of signing certificates and provisioning profiles by logging into their Apple Developer account.
+  - **P2: Clone Project for New Quiz App**:
+    - The user has expressed a desire to clone this entire project to create a new, separate quiz app for a different TV series (ABİ).
+    - The agent has already provided a detailed prompt for the user to start a new job for this task. This is a future task to be initiated by the user in a new session.
 - **Future Tasks**:
-    - **Refine Leaderboard**: Ensure the YOUR POSITION feature on the leaderboard works correctly.
-    - **Full Sound Design**: Test and confirm that all specified sounds (click, ding, buzz, timer tick, etc.) are present and controlled by the settings toggle.
+    - **Implement Vibration**: The Settings screen has a toggle for Vibration, but the functionality () is not yet implemented in the quiz screen.
+    - **Refine Sound Design**: A full test of all sound effects and their control via the settings toggle is still pending.
 
 **Completed work in this session**
-- **Complete Game Redesign**: The entire application was refactored to introduce Episode and Mixed modes, a new scoring system (best-of and global scores), and a 3-tab leaderboard.
-- **Backend Overhaul**:  was rewritten to support the new game logic, database schemas, and API endpoints. It now also dynamically parses episodes and questions from the Google Sheet, handling different CSV headers.
-- **Frontend Overhaul**: All screens were either created or rewritten: ,  (main menu), , , , , and .
-- **Dynamic Episode System**: The backend and frontend were updated to dynamically fetch and display any number of episodes from Google Sheets, including visual indicators and logic for locked episodes.
-- **Critical Bug Fixes**:
-    - **Quiz Logic**: Fixed the always correct answer bug by making the frontend resilient to two different API response formats (from the outdated production backend and the new local backend).
-    - **Life System**: Refactored the game-over logic using  to prevent race conditions that stopped the game from ending.
-    - **Ad System**: Re-architected the AdMob implementation to use platform-specific files ( and ), resolving web preview crashes and setting up the correct structure for native ads.
-    - **UI/UX**: Implemented the new main menu design, added banner images, created the quiz exit modal, and fixed the splash screen appearance.
+- **Production Backend Stability**:
+  - Guided the user to perform a Replace Deployment to update the backend code.
+  - Updated all frontend files (, ) to use the stable production URL (), ensuring the app is no longer dependent on the temporary preview environment and works 24/7.
+- **Dynamic Episode System (Backend Fixes)**:
+  - Removed hardcoded  episode limits in  for both the  and  endpoints. The system is now fully dynamic and will support any number of episodes added to Google Sheets.
+- **Dynamic Episode Count (Frontend)**:
+  - Modified  to dynamically fetch and display the number of available episodes on the main menu (e.g., 15 Bölüm instead of a fixed 14 Bölüm).
+- **Leaderboard Fixes**:
+  - Fixed a critical bug where the leaderboard would not show data for episodes beyond 14. This was a frontend issue in  that was also made dynamic.
+- **Rewarded Ad (3X Score) Logic**:
+  - Implemented the full flow for the 3X rewarded ad in .
+  - Critically, fixed a bug where the tripled score was not being sent back to the backend to update the leaderboard. The new score is now correctly submitted.
+- **Expanded Interstitial Ads**:
+  - Added logic to show an interstitial ad when the user navigates to the Settings screen from the main menu.
+- **Banner Ad in Quiz**:
+  - Added the banner ad component to the bottom of the  screen.
+- **Android AAB Build for Google Play**:
+  - Resolved a complex series of build issues related to signing keys.
+  - Changed the app's package name to .
+  - Guided the user to create a new keystore, upload it to the Expo Dashboard, and associate it with the new package name, enabling successful signed AAB builds.
+- **iOS Preparation**:
+  - Added a Misafir Olarak Devam Et (Guest Login) button to  to comply with Apple's review guidelines.
+  - Configured  with a build profile for iOS.
+- **Version Bumping**:
+  - Incrementally updated the  in  (up to 7, then 8 for iOS) and the visible version string in  as requested by the user for new builds.
 
 **Earlier issues found/mentioned but not fixed**
-All known issues are listed in the **All Pending/In progress Issue list**.
+-   **Issue 1: Vibration feature not implemented.**
+    -   **Debug checklist**:
+        1.  In , import  from .
+        2.  In functions like  and , add .
+        3.  Ensure this is controlled by the vibration setting stored via .
+    -   **Why to solve this issue and what will be achieved with this?**: Fulfills a feature request from the settings screen and improves user feedback.
+    -   **Should Test frontend/backend/both after fix**: Frontend.
+    -   **Is recurring issue?** N
 
 **Known issue recurrence from previous fork**
 N/A
@@ -112,81 +115,83 @@ N/A
 - **Frontend**: React Native, Expo, Expo Router, TypeScript
 - **Backend**: Python, FastAPI
 - **Database**: MongoDB
-- **State Management**: , ,  (for resolving state closure issues).
-- **Native Specifics**:
-    - **Platform-specific files**: Using  and  extensions to isolate native-only code (like ).
-    - **EAS Build**: Used for creating native APKs.
-    - ****: For native audio playback.
-- **API Resilience**: Client-side data normalization in  to handle multiple backend API versions simultaneously.
+- **Build/Deployment**: EAS Build, EAS Update, Production Deployment on Emergent.
+- **Monetization**:  for Banner, Interstitial, and Rewarded ads.
+- **Platform-specific code**: Using  to determine which ad IDs to use will be the next step.
+- **App Signing**: Understanding and resolving Android Keystore issues for AAB generation.
 
 **key DB schema**
 -   **users**: 
--   **episode_scores**:  (stores only the best score)
--   **mixed_scores**:  (stores only the best score)
--   **leaderboard**: (This collection appears to be deprecated by the new design, which builds leaderboards by aggregating the  and  collections).
+-   **episode_scores**: 
+-   **mixed_scores**: 
+-   **global_scores**: 
 
 **changes in tech stack**
--    was added for persistent user storage (username).
-
-**All files of reference**
--   : Contains the critical life system logic ( fix).
--   : Banner ad implementation for native.
--   : Interstitial ad implementation for native.
--   : Contains the crucial fallback logic to support the outdated production backend.
--   : The completely rewritten backend logic.
--   : Configuration for splash screen and AdMob App ID.
--   : Configuration for EAS Build.
-
-**Areas that need refactoring**:
-- The API fallback logic in  is a temporary measure. Once the production backend is updated, this complex logic should be removed to simplify the code.
-
-**key api endpoints**
--   : Create/get user.
--   : Get list of episodes with user's best scores.
--   : Get questions for a quiz (supports , , ).
--   : Submit a score for either episode or mixed mode.
--   : Get leaderboard data (supports  and ).
-
-**Critical Info for New Agent**
--   **PRIORITY 1**: You must guide the user to build a new APK to verify the latest fixes for the **life system** and **AdMob ads**. These are native-only bugs.
--   **DO NOT TRUST WEB PREVIEW**: The web preview is unreliable for testing core gameplay and native features like ads due to the outdated production backend and platform differences. All critical testing must be done on a native APK.
--   **Production Backend is Outdated**: The live API () is different from the local one. The frontend has a workaround in , but be mindful that any new backend features will not work in the APK until the production server is updated.
--   **Ad Implementation**: Ads are implemented using platform-specific files ( / ). To edit native ad behavior, you must modify the  files in  and .
-
-**documents created in this job**
 None.
 
+**All files of reference**
+-   : Guest login added.
+-   : 3X rewarded ad logic fixed.
+-   : Dynamic episode limit implemented.
+-   : Hardcoded episode limits removed.
+-   : Updated to use the stable production backend URL.
+-   :  and  name updated.
+-   : Build profiles for Android and iOS updated.
+-   : Rewarded ad logic was added; will need modification for iOS IDs.
+
+**Areas that need refactoring**:
+- The fallback logic in  should be completely removed now that the app points to a single, stable production backend. This would simplify the code significantly.
+
+**key api endpoints**
+-   : Get list of all episodes.
+-   : Get questions for an episode.
+-   : Submit a score for an episode.
+-   : Get the global leaderboard.
+-   : Get leaderboard for an episode.
+
+**Critical Info for New Agent**
+-   **PRIORITY 1**: The immediate next task is to add the iOS-specific AdMob IDs provided by the user to enable monetization on iOS. This is a prerequisite for the iOS build.
+-   **iOS Build Process**: The user wants to create an  file for the App Store. Guide them to use the An Expo user account is required to proceed.
+
+Log in to EAS with email or username (exit and run eas login --help to see other login options)
+Input is required, but stdin is not readable. Failed to display prompt: Email or username command. Remind them that EAS will automatically handle all signing credentials by asking them to log in to their Apple Developer account.
+-   **Backend is Stable**: The backend is now on a stable production URL (). There is no longer a discrepancy between local/preview and production APIs. All hardcoded limits have been removed. Future backend changes only require a .
+-   **Frontend Changes Require a New Build**: Any changes to the frontend code (like the ad ID implementation) will require the user to build a new AAB (for Android) or IPA (for iOS) to see the changes.
+
+**documents created in this job**
+-   : A new Android Keystore was generated for the user to solve AAB signing issues.
+
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User**: I want to update the settings screen links for privacy and contact. (Request fulfilled).
-2.  **User**: Reports 4 new bugs in the native build: 1) Blue splash screen, 2) Quiz gets stuck on loading, 3) Ads not working, 4) Version text is wrong.
-3.  **Agent**: Acknowledges and starts fixing the 4 issues.
-4.  **User**: Provides a screen recording video showing the game still not ending and ads not appearing.
-5.  **Agent**: Analyzes the video and understands the two remaining critical bugs.
-6.  **Agent**: Implements a  based fix for the life system and updates ad components with test IDs and error logging.
-7.  **Agent**: (Work in progress, agent was updating  when the session ended).
-8.  **PENDING**: User is waiting for a definitive fix for the game-over logic and the non-functional ads, so they can build a new working APK.
+1.  **User**: I need to build for iOS. Let's add a guest login for Apple review. Also, how does signing work for iOS?
+2.  **User**: Don't forget the iOS AdMob ad IDs. Here they are. (PENDING IMPLEMENTATION)
+3.  **User**: Can you set the version to 1.0.8 and versionCode to 8? (DONE)
+4.  **User**: I found another bug: The leaderboard only shows up to 14 episodes. (FIXED)
+5.  **User**: Will this fix require a new AAB? (ANSWERED: Yes)
+6.  **User**: Ok, how about deploying? (ANSWERED: Not for this specific frontend fix)
+7.  **User**: Set version to 1.0.7 and versionCode to 7. (DONE)
+8.  **User**: Another bug: My score for episode 15 doesn't show up on the episode 15 leaderboard. (FIXED)
+9.  **User**: Is this fix dynamic for all future episodes? (ANSWERED: Yes)
+10. **User**: Tell me exactly what code you changed so I can apply it to my other projects. (DONE)
 
 **Project Health Check:**
--   **Broken**: The core gameplay loop (game over condition) and monetization (ads) are confirmed to be non-functional in the latest native build tested by the user, rendering the app unusable for its main purpose.
--   **Mocked**: Ad functionality on the web preview is a simple text placeholder.
+-   **Broken**: No core features are currently known to be broken. The last critical bugs (leaderboard, scoring, dynamic episodes) have been fixed.
+-   **Mocked**: Web ad functionality remains a placeholder. All testing must be done on native builds.
 
 **3rd Party Integrations**
--   **Google Sheets**: Used as the dynamic data source for all quiz questions and episodes.
--   **Google AdMob**: Integrated for monetization via banner and interstitial ads. Requires a native build with EAS.
--   **MongoDB**: The database for storing user data and scores.
+-   **Google Sheets**: Primary data source for all quiz content.
+-   **Google AdMob**: Integrated for monetization (Banner, Interstitial, Rewarded). Requires platform-specific ad unit IDs.
+-   **MongoDB**: Database for user and score storage.
 
 **Testing status**
--   **Testing agent used after significant changes**: YES (Web screenshot agent was used extensively, but it gave misleading results due to the API discrepancy).
+-   **Testing agent used after significant changes**: YES (Web screenshot agent was used to verify UI flows).
 -   **Troubleshoot agent used after agent stuck in loop**: NO
 -   **Test files created**: None.
--   **Known regressions**: The life system and ad functionality worked at some point but are currently broken in the native build.
+-   **Known regressions**: None. Major regressions from previous forks (life system, API issues) have been resolved.
 
 **Credentials to test flow:**
-N/A
+The user was provided with credentials for the  keystore ().
 
 **What agent forgot to execute**
-- The agent correctly identified the need for platform-specific files for ads but went through several incorrect approaches (, simple  checks) before settling on the correct one, wasting significant time.
-- The agent did not initially add robust error handling or fallback logic, leading to repeated failures when the native APK (using the production URL) behaved differently from the web preview (using the local URL).
-- The agent did not implement the Vibration feature requested in the settings screen.
-- The detailed animations (confetti, sparkle, etc.) from the redesign spec were likely not implemented or, at a minimum, never verified.
+- The vibration feature, though toggled in settings, has not been implemented.
+- The agent was in the middle of implementing the user's last request (adding iOS AdMob IDs) when the session ended. It is the most critical pending task.
 </analysis>
