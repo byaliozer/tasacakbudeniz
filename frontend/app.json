@@ -12,7 +12,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.busegame.tasacakbudeniz",
       "infoPlist": {
-        "GADApplicationIdentifier": "ca-app-pub-9873123247401502~2062931178",
+        "GADApplicationIdentifier": "ca-app-pub-9873123247401502~9165449979",
         "SKAdNetworkItems": [
           { "SKAdNetworkIdentifier": "cstr6suwn9.skadnetwork" },
           { "SKAdNetworkIdentifier": "4fzdc2evr5.skadnetwork" },
