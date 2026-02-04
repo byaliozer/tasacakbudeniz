@@ -13,6 +13,9 @@
       "android": {
         "buildType": "apk",
         "withoutCredentials": true
+      },
+      "ios": {
+        "simulator": true
       }
     },
     "preview": {
@@ -23,6 +26,9 @@
       "android": {
         "buildType": "apk",
         "withoutCredentials": true
+      },
+      "ios": {
+        "distribution": "internal"
       }
     },
     "production": {
@@ -33,10 +39,19 @@
       "android": {
         "buildType": "app-bundle",
         "credentialsSource": "remote"
+      },
+      "ios": {
+        "credentialsSource": "remote"
       }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "",
+        "ascAppId": "",
+        "appleTeamId": ""
+      }
+    }
   }
 }
