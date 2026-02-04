@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { setUsername } from '../src/services/api';
 
 export default function UsernameScreen() {
@@ -19,6 +20,11 @@ export default function UsernameScreen() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  const generateGuestId = () => {
+    const randomNum = Math.floor(1000 + Math.random() * 9000);
+    return `Misafir_${randomNum}`;
+  };
 
   const handleSubmit = async () => {
     const trimmed = name.trim();
@@ -34,12 +40,24 @@ export default function UsernameScreen() {
     setLoading(true);
     try {
       await setUsername(trimmed);
-      // Force a small delay to ensure storage is written
       await new Promise(resolve => setTimeout(resolve, 100));
-      // Use push instead of replace to avoid layout check loop
       router.push('/');
     } catch (e) {
       console.error('Error saving username:', e);
+      setError('Bir hata oluştu');
+      setLoading(false);
+    }
+  };
+
+  const handleGuestLogin = async () => {
+    setLoading(true);
+    try {
+      const guestName = generateGuestId();
+      await setUsername(guestName);
+      await new Promise(resolve => setTimeout(resolve, 100));
+      router.push('/');
+    } catch (e) {
+      console.error('Error saving guest username:', e);
       setError('Bir hata oluştu');
       setLoading(false);
     }
@@ -99,8 +117,24 @@ export default function UsernameScreen() {
             </Text>
           </TouchableOpacity>
 
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>veya</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <TouchableOpacity
+            style={[styles.guestButton, loading && styles.buttonDisabled]}
+            onPress={handleGuestLogin}
+            disabled={loading}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="person-outline" size={20} color="#009688" />
+            <Text style={styles.guestButtonText}>Misafir Olarak Devam Et</Text>
+          </TouchableOpacity>
+
           <Text style={styles.hint}>
-            Bu isim liderlik tablosunda görünecek
+            Misafir olarak giriş yaparsanız, ayarlardan{'\n'}istediğiniz zaman adınızı değiştirebilirsiniz
           </Text>
         </KeyboardAvoidingView>
       </ScrollView>
@@ -184,10 +218,42 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
   },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#444',
+  },
+  dividerText: {
+    color: '#666',
+    paddingHorizontal: 16,
+    fontSize: 14,
+  },
+  guestButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 2,
+    borderColor: '#009688',
+    gap: 8,
+  },
+  guestButtonText: {
+    color: '#009688',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   hint: {
     color: '#666',
     textAlign: 'center',
     marginTop: 16,
-    fontSize: 14,
+    fontSize: 13,
+    lineHeight: 20,
   },
 });
