@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { BannerAd as GoogleBannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 
-// Production AdMob Banner ID
-const PRODUCTION_BANNER_ID = 'ca-app-pub-9873123247401502/9749849505';
+// Production AdMob Banner IDs - Platform specific
+const ANDROID_BANNER_ID = 'ca-app-pub-9873123247401502/9749849505';
+const IOS_BANNER_ID = 'ca-app-pub-9873123247401502/1782075558';
 
-// Use production ID - interstitial works so AdMob account is verified
-const BANNER_AD_UNIT_ID = PRODUCTION_BANNER_ID;
+// Select correct ID based on platform
+const BANNER_AD_UNIT_ID = Platform.OS === 'ios' ? IOS_BANNER_ID : ANDROID_BANNER_ID;
 
 interface BannerAdProps {
   style?: object;

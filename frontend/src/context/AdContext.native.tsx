@@ -1,18 +1,28 @@
 import React, { createContext, useContext, useCallback, useEffect, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 import mobileAds, { InterstitialAd, RewardedAd, AdEventType, RewardedAdEventType, TestIds } from 'react-native-google-mobile-ads';
 
-// Production AdMob IDs
-const PRODUCTION_APP_ID = 'ca-app-pub-9873123247401502~2062931178';
-const PRODUCTION_INTERSTITIAL_ID = 'ca-app-pub-9873123247401502/6521050938';
-const PRODUCTION_REWARDED_ID = 'ca-app-pub-9873123247401502/8879082930';
+// Production AdMob IDs - Android
+const ANDROID_APP_ID = 'ca-app-pub-9873123247401502~2062931178';
+const ANDROID_INTERSTITIAL_ID = 'ca-app-pub-9873123247401502/6521050938';
+const ANDROID_REWARDED_ID = 'ca-app-pub-9873123247401502/8879082930';
+
+// Production AdMob IDs - iOS
+const IOS_APP_ID = 'ca-app-pub-9873123247401502~9165449979';
+const IOS_INTERSTITIAL_ID = 'ca-app-pub-9873123247401502/3913123295';
+const IOS_REWARDED_ID = 'ca-app-pub-9873123247401502/9149864452';
+
+// Select correct ID based on platform
+const PRODUCTION_INTERSTITIAL_ID = Platform.OS === 'ios' ? IOS_INTERSTITIAL_ID : ANDROID_INTERSTITIAL_ID;
+const PRODUCTION_REWARDED_ID = Platform.OS === 'ios' ? IOS_REWARDED_ID : ANDROID_REWARDED_ID;
 
 // Use production IDs (test IDs for dev mode)
 const INTERSTITIAL_AD_UNIT_ID = __DEV__ ? TestIds.INTERSTITIAL : PRODUCTION_INTERSTITIAL_ID;
 const REWARDED_AD_UNIT_ID = __DEV__ ? TestIds.REWARDED : PRODUCTION_REWARDED_ID;
 
 export const ADMOB_CONFIG = {
-  APP_ID: PRODUCTION_APP_ID,
-  BANNER_ID: 'ca-app-pub-9873123247401502/9749849505',
+  APP_ID: Platform.OS === 'ios' ? IOS_APP_ID : ANDROID_APP_ID,
+  BANNER_ID: Platform.OS === 'ios' ? 'ca-app-pub-9873123247401502/1782075558' : 'ca-app-pub-9873123247401502/9749849505',
   INTERSTITIAL_ID: PRODUCTION_INTERSTITIAL_ID,
   REWARDED_ID: PRODUCTION_REWARDED_ID,
 };
