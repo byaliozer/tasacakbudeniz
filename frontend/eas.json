@@ -44,5 +44,18 @@
         "credentialsSource": "remote"
       }
     }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "byaliozer@gmail.com",
+        "ascAppId": "6758716324",
+        "appleTeamId": "HZ7529A6U4"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./google-service-account.json",
+        "track": "production"
+      }
+    }
   }
 }
