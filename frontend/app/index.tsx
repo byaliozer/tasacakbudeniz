@@ -139,7 +139,7 @@ export default function MainMenu() {
             activeOpacity={0.8}
           >
             <Ionicons name="logo-instagram" size={20} color="#fff" />
-            <Text style={styles.instagramButtonText}>@buse.game</Text>
+            <Text style={styles.instagramButtonText}>Takip Et</Text>
           </TouchableOpacity>
         </View>
       </View>
