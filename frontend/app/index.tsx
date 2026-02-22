@@ -264,4 +264,32 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#aaa',
   },
+  instagramSection: {
+    backgroundColor: '#2d2d44',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
+    alignItems: 'center',
+  },
+  instagramText: {
+    fontSize: 12,
+    color: '#999',
+    textAlign: 'center',
+    marginBottom: 10,
+    lineHeight: 18,
+  },
+  instagramButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E1306C',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    gap: 6,
+  },
+  instagramButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
+  },
 });
