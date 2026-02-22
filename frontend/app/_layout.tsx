@@ -3,9 +3,10 @@ import { Stack, useRouter, useSegments, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SoundProvider } from '../src/context/SoundContext';
 import { AdProvider } from '../src/context/AdContext';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, Platform } from 'react-native';
 import { hasUsername } from '../src/services/api';
 import { useFocusEffect } from '@react-navigation/native';
+import { scheduleNotifications } from '../src/services/notifications';
 
 function RootLayoutNav() {
   const [isLoading, setIsLoading] = useState(true);
