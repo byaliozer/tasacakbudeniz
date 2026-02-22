@@ -42,6 +42,16 @@ export default function MainMenu() {
     router.push('/settings');
   };
 
+  const handleLeaderboardPress = async () => {
+    // Show interstitial ad before going to leaderboard
+    await showInterstitial();
+    router.push('/leaderboard');
+  };
+
+  const handleInstagramPress = () => {
+    Linking.openURL('https://www.instagram.com/buse.game');
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
