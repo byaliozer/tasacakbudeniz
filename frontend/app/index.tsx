@@ -109,7 +109,7 @@ export default function MainMenu() {
         <View style={styles.utilityContainer}>
           <TouchableOpacity
             style={styles.utilityButton}
-            onPress={() => router.push('/leaderboard')}
+            onPress={handleLeaderboardPress}
             activeOpacity={0.7}
           >
             <Ionicons name="trophy" size={22} color="#ffc107" />
