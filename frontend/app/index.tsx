@@ -127,6 +127,21 @@ export default function MainMenu() {
             <Text style={styles.utilityText}>Ayarlar</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Instagram Info Section */}
+        <View style={styles.instagramSection}>
+          <Text style={styles.instagramText}>
+            Oyuna eklenmesini istediğiniz fikirleri aşağıdaki Instagram hesabımıza takip edip mesaj yazarak iletebilirsiniz
+          </Text>
+          <TouchableOpacity
+            style={styles.instagramButton}
+            onPress={handleInstagramPress}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="logo-instagram" size={20} color="#fff" />
+            <Text style={styles.instagramButtonText}>@buse.game</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Banner Ad */}
