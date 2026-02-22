@@ -29,6 +29,13 @@ function RootLayoutNav() {
   // Check on mount
   useEffect(() => {
     checkUsername();
+    
+    // Schedule notifications on app start (Android only)
+    if (Platform.OS === 'android') {
+      scheduleNotifications().catch(err => {
+        console.log('[Notifications] Error scheduling:', err);
+      });
+    }
   }, []);
 
   // Re-check when pathname changes (after username is set)
