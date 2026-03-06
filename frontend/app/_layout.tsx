@@ -11,11 +11,12 @@ import { scheduleNotifications } from '../src/services/notifications';
 function RootLayoutNav() {
   const [isLoading, setIsLoading] = useState(true);
   const [needsUsername, setNeedsUsername] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
   const router = useRouter();
   const segments = useSegments();
   const pathname = usePathname();
-
   const checkUsername = useCallback(async () => {
+    setIsChecking(true);
     try {
       const has = await hasUsername();
       setNeedsUsername(!has);
@@ -23,8 +24,11 @@ function RootLayoutNav() {
     } catch (e) {
       console.error('Error checking username:', e);
       setIsLoading(false);
+    } finally {
+      setIsChecking(false);
     }
   }, []);
+
 
   // Check on mount
   useEffect(() => {
@@ -47,8 +51,7 @@ function RootLayoutNav() {
 
   // Redirect logic
   useEffect(() => {
-    if (isLoading) return;
-
+    if (isLoading || isChecking) return;  // <-- Don't redirect while checking
     const inUsernameScreen = segments[0] === 'username';
 
     if (needsUsername && !inUsernameScreen) {
@@ -58,7 +61,7 @@ function RootLayoutNav() {
       // Have username but on username screen -> go to home
       router.replace('/');
     }
-  }, [isLoading, needsUsername, segments]);
+  }, [isLoading, isChecking, needsUsername, segments]); 
 
   if (isLoading) {
     return (
