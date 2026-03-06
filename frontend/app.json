@@ -2,7 +2,7 @@
   "expo": {
     "name": "Taşacak Bu Deniz",
     "slug": "tasacakbudeniz",
-    "version": "1.0.9",
+    "version": "1.0.10",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "tasacakbudeniz",
@@ -50,7 +50,7 @@
     },
     "android": {
       "package": "com.busegame.tasacakbudeniz",
-      "versionCode": 9,
+      "versionCode": 10,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#1CB0F6"
