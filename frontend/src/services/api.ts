@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Use production backend URL - this is the deployed backend
-const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://deniztest.emergent.host';
+// Production backend URL - hardcoded for reliability
+const API_URL = 'https://deniztest.emergent.host';
 
 // Storage keys
 const STORAGE_KEYS = {
