@@ -220,7 +220,7 @@ function normalizeQuizResponse(data: any): QuizResponse {
 export async function getEpisodes(): Promise<Episode[]> {
   try {
     console.log('[API] Fetching episodes from:', `${API_URL}/api/episodes`);
-    const response = await fetch(`${API_URL}/api/episodes`);
+    const response = await fetchWithRetry(`${API_URL}/api/episodes`);
     console.log('[API] Episodes response status:', response.status);
     
     if (!response.ok) {
@@ -238,13 +238,13 @@ export async function getEpisodes(): Promise<Episode[]> {
 }
 
 export async function getEpisodeQuiz(episodeId: number): Promise<QuizResponse> {
-  // Try new endpoint first, fallback to old endpoint
-  let response = await fetch(`${API_URL}/api/quiz/episode/${episodeId}?count=25`);
+  // Try new endpoint first with retry, fallback to old endpoint
+  let response = await fetchWithRetry(`${API_URL}/api/quiz/episode/${episodeId}?count=25`);
   
   if (!response.ok) {
     // Fallback to old endpoint format
     console.log('[API] Trying fallback endpoint...');
-    response = await fetch(`${API_URL}/api/quiz/${episodeId}?count=25`);
+    response = await fetchWithRetry(`${API_URL}/api/quiz/${episodeId}?count=25`);
   }
   
   if (!response.ok) {
