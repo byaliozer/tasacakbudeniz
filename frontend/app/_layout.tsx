@@ -34,12 +34,13 @@ function RootLayoutNav() {
   useEffect(() => {
     checkUsername();
     
+    // TEMPORARILY DISABLED - Testing if notifications cause network issues
     // Schedule notifications on app start (Android only)
-    if (Platform.OS === 'android') {
-      scheduleNotifications().catch(err => {
-        console.log('[Notifications] Error scheduling:', err);
-      });
-    }
+    // if (Platform.OS === 'android') {
+    //   scheduleNotifications().catch(err => {
+    //     console.log('[Notifications] Error scheduling:', err);
+    //   });
+    // }
   }, []);
 
   // Re-check when pathname changes (after username is set)
