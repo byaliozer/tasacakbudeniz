@@ -256,8 +256,8 @@ export async function getEpisodeQuiz(episodeId: number): Promise<QuizResponse> {
 }
 
 export async function getMixedQuiz(): Promise<QuizResponse> {
-  // Try new endpoint first
-  let response = await fetch(`${API_URL}/api/quiz/mixed`);
+  // Try new endpoint first with retry
+  let response = await fetchWithRetry(`${API_URL}/api/quiz/mixed`);
   
   if (!response.ok) {
     // Fallback: fetch all episodes and combine questions
