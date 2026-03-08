@@ -3,11 +3,62 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Production backend URL - using working deployment URL
 const API_URL = 'https://iztest.emergent.host';
 
+// Retry configuration
+const MAX_RETRIES = 4;
+const RETRY_DELAY = 1500; // 1.5 seconds between retries
+
 // Storage keys
 const STORAGE_KEYS = {
   USERNAME: '@denizquiz_username',
   SETTINGS: '@denizquiz_settings',
 };
+
+// Helper function to delay
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Helper function for fetch with retry
+async function fetchWithRetry(url: string, options: RequestInit = {}): Promise<Response> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      console.log(`[API] Attempt ${attempt}/${MAX_RETRIES} for ${url}`);
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          ...options.headers,
+        },
+      });
+      
+      if (response.ok) {
+        console.log(`[API] Success on attempt ${attempt}`);
+        return response;
+      }
+      
+      // If not ok but not a network error, still return response
+      if (response.status < 500) {
+        return response;
+      }
+      
+      // Server error (5xx), retry
+      console.log(`[API] Server error ${response.status} on attempt ${attempt}`);
+      lastError = new Error(`Server error: ${response.status}`);
+    } catch (error: any) {
+      console.log(`[API] Network error on attempt ${attempt}:`, error.message);
+      lastError = error;
+    }
+    
+    // Wait before retry (except on last attempt)
+    if (attempt < MAX_RETRIES) {
+      console.log(`[API] Waiting ${RETRY_DELAY}ms before retry...`);
+      await delay(RETRY_DELAY);
+    }
+  }
+  
+  throw lastError || new Error('Bağlantı hatası - tüm denemeler başarısız');
+}
 
 // === TYPES ===
 
