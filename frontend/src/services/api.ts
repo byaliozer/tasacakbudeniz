@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Production backend URL - hardcoded for reliability
-const API_URL = 'https://deniztest.emergent.host';
+// Production backend URL - using preview URL for mobile compatibility
+const API_URL = 'https://triviawave.preview.emergentagent.com';
 
 // Storage keys
 const STORAGE_KEYS = {
