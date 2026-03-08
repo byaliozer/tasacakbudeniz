@@ -1,7 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Production backend URL - using working deployment URL
-const API_URL = 'https://iztest.emergent.host';
+// Production backend URL - using preview URL that works on mobile data
+// Falls back to environment variable if available
+const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://triviawave.preview.emergentagent.com';
 
 // Retry configuration
 const MAX_RETRIES = 4;
