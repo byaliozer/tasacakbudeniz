@@ -476,8 +476,11 @@ async def update_global_score(player_name: str):
     episode_collection = db.episode_scores
     global_collection = db.global_scores
     
-    # Get all episode scores for this player
-    cursor = episode_collection.find({"player_name": player_name})
+    # Get all episode scores for this player (optimized - only fetch score field)
+    cursor = episode_collection.find(
+        {"player_name": player_name},
+        {"score": 1, "_id": 0}
+    )
     episode_scores = await cursor.to_list(length=100)
     
     # Calculate total
