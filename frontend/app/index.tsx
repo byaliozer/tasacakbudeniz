@@ -85,7 +85,7 @@ export default function MainMenu() {
         <View style={styles.gameModeContainer}>
           <TouchableOpacity
             style={styles.gameModeButton}
-            onPress={() => router.push('/episodes')}
+            onPress={handleEpisodeModePress}
             activeOpacity={0.85}
           >
             <View style={styles.gameModeIconContainer}>
@@ -100,7 +100,7 @@ export default function MainMenu() {
 
           <TouchableOpacity
             style={[styles.gameModeButton, styles.mixedModeButton]}
-            onPress={() => router.push('/quiz?mode=mixed')}
+            onPress={handleMixedModePress}
             activeOpacity={0.85}
           >
             <View style={[styles.gameModeIconContainer, styles.mixedIconContainer]}>
