@@ -48,6 +48,7 @@
     },
     "plugins": [
       "expo-router",
+      "./app.plugin.js",
       [
         "expo-build-properties",
         {
@@ -55,7 +56,8 @@
             "compileSdkVersion": 35,
             "targetSdkVersion": 35,
             "buildToolsVersion": "35.0.0",
-            "usesCleartextTraffic": true
+            "usesCleartextTraffic": true,
+            "enableBuildConfigGeneration": true
           }
         }
       ],
