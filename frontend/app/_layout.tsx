@@ -6,8 +6,7 @@ import { AdProvider } from '../src/context/AdContext';
 import { View, ActivityIndicator, StyleSheet, Platform } from 'react-native';
 import { hasUsername } from '../src/services/api';
 import { useFocusEffect } from '@react-navigation/native';
-// TEMPORARILY DISABLED - Testing if notifications cause network issues
-// import { scheduleNotifications } from '../src/services/notifications';
+import { scheduleNotifications } from '../src/services/notifications';
 
 function RootLayoutNav() {
   const [isLoading, setIsLoading] = useState(true);
@@ -35,13 +34,12 @@ function RootLayoutNav() {
   useEffect(() => {
     checkUsername();
     
-    // TEMPORARILY DISABLED - Testing if notifications cause network issues
     // Schedule notifications on app start (Android only)
-    // if (Platform.OS === 'android') {
-    //   scheduleNotifications().catch(err => {
-    //     console.log('[Notifications] Error scheduling:', err);
-    //   });
-    // }
+    if (Platform.OS === 'android' || Platform.OS === 'ios') {
+      scheduleNotifications().catch(err => {
+        console.log('[Notifications] Error scheduling:', err);
+      });
+    }
   }, []);
 
   // Re-check when pathname changes (after username is set)
