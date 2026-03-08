@@ -3,64 +3,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Production backend URL - hardcoded for reliability
 const API_URL = 'https://deniztest.emergent.host';
 
-// Timeout configuration for mobile networks (in milliseconds)
-const FETCH_TIMEOUT = 30000; // 30 seconds
-const RETRY_COUNT = 3;
-const RETRY_DELAY = 1000; // 1 second
-
 // Storage keys
 const STORAGE_KEYS = {
   USERNAME: '@denizquiz_username',
   SETTINGS: '@denizquiz_settings',
 };
-
-// Helper function for fetch with timeout
-async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout: number = FETCH_TIMEOUT): Promise<Response> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
-  
-  try {
-    const response = await fetch(url, {
-      ...options,
-      signal: controller.signal,
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        ...options.headers,
-      },
-    });
-    clearTimeout(timeoutId);
-    return response;
-  } catch (error) {
-    clearTimeout(timeoutId);
-    throw error;
-  }
-}
-
-// Helper function for fetch with retry
-async function fetchWithRetry(url: string, options: RequestInit = {}, retries: number = RETRY_COUNT): Promise<Response> {
-  let lastError: Error | null = null;
-  
-  for (let i = 0; i < retries; i++) {
-    try {
-      console.log(`[API] Attempt ${i + 1}/${retries} for ${url}`);
-      const response = await fetchWithTimeout(url, options);
-      return response;
-    } catch (error: any) {
-      lastError = error;
-      console.log(`[API] Attempt ${i + 1} failed:`, error.message);
-      
-      if (i < retries - 1) {
-        // Wait before retry (exponential backoff)
-        const delay = RETRY_DELAY * Math.pow(2, i);
-        console.log(`[API] Retrying in ${delay}ms...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
-    }
-  }
-  
-  throw lastError || new Error('Bağlantı hatası');
-}
 
 // === TYPES ===
 
