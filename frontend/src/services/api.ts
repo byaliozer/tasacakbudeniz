@@ -1,65 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// Production backend URL - using preview URL that works on mobile data
-// Falls back to environment variable if available
-const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://triviawave.preview.emergentagent.com';
-
-// Retry configuration
-const MAX_RETRIES = 4;
-const RETRY_DELAY = 1500; // 1.5 seconds between retries
+import { EPISODES, QUESTIONS, getAllQuestions, LocalQuestion } from '../data/quizData';
 
 // Storage keys
 const STORAGE_KEYS = {
   USERNAME: '@denizquiz_username',
   SETTINGS: '@denizquiz_settings',
+  EPISODE_SCORES: '@denizquiz_episode_scores',
+  MIXED_BEST_SCORE: '@denizquiz_mixed_best',
+  EPISODE_BEST_SCORES: '@denizquiz_episode_bests',
 };
-
-// Helper function to delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-// Helper function for fetch with retry
-async function fetchWithRetry(url: string, options: RequestInit = {}): Promise<Response> {
-  let lastError: Error | null = null;
-  
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      console.log(`[API] Attempt ${attempt}/${MAX_RETRIES} for ${url}`);
-      const response = await fetch(url, {
-        ...options,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          ...options.headers,
-        },
-      });
-      
-      if (response.ok) {
-        console.log(`[API] Success on attempt ${attempt}`);
-        return response;
-      }
-      
-      // If not ok but not a network error, still return response
-      if (response.status < 500) {
-        return response;
-      }
-      
-      // Server error (5xx), retry
-      console.log(`[API] Server error ${response.status} on attempt ${attempt}`);
-      lastError = new Error(`Server error: ${response.status}`);
-    } catch (error: any) {
-      console.log(`[API] Network error on attempt ${attempt}:`, error.message);
-      lastError = error;
-    }
-    
-    // Wait before retry (except on last attempt)
-    if (attempt < MAX_RETRIES) {
-      console.log(`[API] Waiting ${RETRY_DELAY}ms before retry...`);
-      await delay(RETRY_DELAY);
-    }
-  }
-  
-  throw lastError || new Error('Bağlantı hatası - tüm denemeler başarısız');
-}
 
 // === TYPES ===
 
@@ -92,29 +41,6 @@ export interface QuizResponse {
   total_questions: number;
   max_possible_score: number;
   mode: 'episode' | 'mixed';
-}
-
-export interface LeaderboardEntry {
-  rank: number;
-  player_name: string;
-  score: number;
-  episodes_completed?: number;
-  questions_answered?: number;
-}
-
-export interface LeaderboardResponse {
-  entries: LeaderboardEntry[];
-  player_rank: number | null;
-  player_score: number | null;
-  total_players: number;
-}
-
-export interface PlayerStats {
-  player_name: string;
-  global_score: number;
-  episodes_completed: number;
-  episode_scores: Record<number, number>;
-  mixed_best_score: number;
 }
 
 export interface Settings {
@@ -157,334 +83,186 @@ export async function saveSettings(settings: Settings): Promise<void> {
   await AsyncStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
 }
 
-// === API FUNCTIONS ===
+// === LOCAL SCORE MANAGEMENT ===
 
-// Transform API response to normalized format
-function normalizeQuizResponse(data: any): QuizResponse {
-  const optionLetters = ['A', 'B', 'C', 'D'];
-  
-  const questions: Question[] = data.questions.map((q: any, qIndex: number) => {
-    const hasId = q.options[0]?.id !== undefined;
-    const hasIsCorrect = q.options[0]?.is_correct !== undefined;
-    
-    let normalizedOptions: QuestionOption[];
-    let correctOption: string;
-    
-    if (hasId && q.correct_option) {
-      normalizedOptions = q.options.map((opt: any) => ({
-        id: String(opt.id).trim().toUpperCase(),
-        text: opt.text
-      }));
-      correctOption = String(q.correct_option).trim().toUpperCase();
-    } else if (hasIsCorrect) {
-      normalizedOptions = q.options.map((opt: any, idx: number) => ({
-        id: optionLetters[idx],
-        text: opt.text
-      }));
-      const correctIdx = q.options.findIndex((opt: any) => opt.is_correct === true);
-      correctOption = correctIdx >= 0 ? optionLetters[correctIdx] : 'A';
-    } else {
-      normalizedOptions = q.options.map((opt: any, idx: number) => ({
-        id: optionLetters[idx],
-        text: typeof opt === 'string' ? opt : opt.text
-      }));
-      correctOption = 'A';
+export async function getLocalEpisodeScores(): Promise<Record<number, number>> {
+  try {
+    const stored = await AsyncStorage.getItem(STORAGE_KEYS.EPISODE_BEST_SCORES);
+    if (stored) {
+      return JSON.parse(stored);
     }
-    
-    const difficultyMap: Record<string, string> = {
-      'easy': 'kolay', 'medium': 'orta', 'hard': 'zor'
-    };
-    const difficulty = difficultyMap[q.difficulty?.toLowerCase()] || q.difficulty || 'orta';
-    const points = typeof q.points === 'number' ? q.points : 
-      (difficulty === 'kolay' ? 10 : difficulty === 'zor' ? 50 : 20);
-    
-    return {
-      id: q.id || `q_${qIndex}`,
-      text: q.text,
-      options: normalizedOptions,
-      correct_option: correctOption,
-      difficulty,
-      points
-    };
-  });
+  } catch {}
+  return {};
+}
+
+async function saveLocalEpisodeBestScore(episodeId: number, score: number): Promise<{ is_new_record: boolean; best_score: number }> {
+  const scores = await getLocalEpisodeScores();
+  const currentBest = scores[episodeId] || 0;
+  const isNewRecord = score > currentBest;
+  
+  if (isNewRecord) {
+    scores[episodeId] = score;
+    await AsyncStorage.setItem(STORAGE_KEYS.EPISODE_BEST_SCORES, JSON.stringify(scores));
+  }
   
   return {
-    episode_id: data.episode_id,
-    episode_name: data.episode_name || 'Quiz',
-    questions,
-    total_questions: data.total_questions || questions.length,
-    max_possible_score: data.max_possible_score || questions.reduce((sum, q) => sum + q.points + 5, 0),
-    mode: data.mode || 'episode'
+    is_new_record: isNewRecord,
+    best_score: isNewRecord ? score : currentBest,
   };
 }
 
-export async function getEpisodes(): Promise<Episode[]> {
+export async function getLocalMixedBestScore(): Promise<number> {
   try {
-    console.log('[API] Fetching episodes from:', `${API_URL}/api/episodes`);
-    const response = await fetchWithRetry(`${API_URL}/api/episodes`);
-    console.log('[API] Episodes response status:', response.status);
-    
-    if (!response.ok) {
-      console.error('[API] Episodes fetch failed:', response.status);
-      throw new Error('Bölümler yüklenemedi');
+    const stored = await AsyncStorage.getItem(STORAGE_KEYS.MIXED_BEST_SCORE);
+    if (stored) {
+      return parseInt(stored, 10) || 0;
     }
-    
-    const data = await response.json();
-    console.log('[API] Episodes loaded:', data.length);
-    return data;
-  } catch (error: any) {
-    console.error('[API] Episodes error:', error.message || error);
-    return [];
+  } catch {}
+  return 0;
+}
+
+async function saveLocalMixedBestScore(score: number): Promise<{ is_new_record: boolean; best_score: number }> {
+  const currentBest = await getLocalMixedBestScore();
+  const isNewRecord = score > currentBest;
+  
+  if (isNewRecord) {
+    await AsyncStorage.setItem(STORAGE_KEYS.MIXED_BEST_SCORE, score.toString());
   }
+  
+  return {
+    is_new_record: isNewRecord,
+    best_score: isNewRecord ? score : currentBest,
+  };
+}
+
+// === HELPER: Convert local question format to game format ===
+
+function convertQuestion(q: LocalQuestion): Question {
+  return {
+    id: q.id,
+    text: q.text,
+    options: [
+      { id: 'A', text: q.A },
+      { id: 'B', text: q.B },
+      { id: 'C', text: q.C },
+      { id: 'D', text: q.D },
+    ],
+    correct_option: q.correct,
+    difficulty: q.difficulty,
+    points: q.points,
+  };
+}
+
+// Fisher-Yates shuffle
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+// === OFFLINE DATA FUNCTIONS ===
+
+export async function getEpisodes(): Promise<Episode[]> {
+  console.log('[API] Loading episodes from local data');
+  return EPISODES.map(ep => ({
+    id: ep.id,
+    name: ep.name,
+    question_count: ep.questionCount,
+    is_locked: ep.isLocked,
+    description: ep.description,
+  }));
 }
 
 export async function getEpisodeQuiz(episodeId: number): Promise<QuizResponse> {
-  // Try new endpoint first with retry, fallback to old endpoint
-  let response = await fetchWithRetry(`${API_URL}/api/quiz/episode/${episodeId}?count=25`);
+  console.log('[API] Loading episode quiz from local data, episode:', episodeId);
   
-  if (!response.ok) {
-    // Fallback to old endpoint format
-    console.log('[API] Trying fallback endpoint...');
-    response = await fetchWithRetry(`${API_URL}/api/quiz/${episodeId}?count=25`);
+  const localQuestions = QUESTIONS[episodeId];
+  if (!localQuestions || localQuestions.length === 0) {
+    throw new Error('Bu bölüm için soru bulunamadı');
   }
   
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    throw new Error(error.detail || 'Quiz yüklenemedi');
-  }
-  const data = await response.json();
-  return normalizeQuizResponse(data);
+  const episode = EPISODES.find(ep => ep.id === episodeId);
+  const questions = localQuestions.map(convertQuestion);
+  
+  return {
+    episode_id: episodeId,
+    episode_name: episode?.name || `${episodeId}. Bölüm`,
+    questions,
+    total_questions: questions.length,
+    max_possible_score: questions.reduce((sum, q) => sum + q.points + 5, 0),
+    mode: 'episode',
+  };
 }
 
 export async function getMixedQuiz(): Promise<QuizResponse> {
-  // Try new endpoint first with retry
-  let response = await fetchWithRetry(`${API_URL}/api/quiz/mixed`);
+  console.log('[API] Loading mixed quiz from local data');
   
-  if (!response.ok) {
-    // Fallback: fetch all episodes and combine questions
-    console.log('[API] Mixed endpoint not found, using fallback...');
-    const episodes = await getEpisodes();
-    const allQuestions: any[] = [];
-    
-    for (const ep of episodes.slice(0, 5)) { // Limit to first 5 episodes for performance
-      try {
-        const quiz = await getEpisodeQuiz(ep.id);
-        allQuestions.push(...quiz.questions);
-      } catch (e) {
-        console.log(`[API] Could not fetch episode ${ep.id}`);
-      }
-    }
-    
-    // Shuffle questions
-    for (let i = allQuestions.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [allQuestions[i], allQuestions[j]] = [allQuestions[j], allQuestions[i]];
-    }
-    
-    return {
-      episode_id: null,
-      episode_name: 'Karışık Mod',
-      questions: allQuestions,
-      total_questions: allQuestions.length,
-      max_possible_score: allQuestions.reduce((sum, q) => sum + q.points + 5, 0),
-      mode: 'mixed'
-    };
-  }
+  const allLocalQuestions = getAllQuestions();
+  const shuffled = shuffleArray(allLocalQuestions);
+  const questions = shuffled.map(convertQuestion);
   
-  const data = await response.json();
-  return normalizeQuizResponse(data);
+  return {
+    episode_id: null,
+    episode_name: 'Karışık Mod',
+    questions,
+    total_questions: questions.length,
+    max_possible_score: questions.reduce((sum, q) => sum + q.points + 5, 0),
+    mode: 'mixed',
+  };
 }
+
+// === SCORE FUNCTIONS (Local Only) ===
 
 export async function submitEpisodeScore(
   episodeId: number,
   score: number,
-  correctCount: number,
-  speedBonus: number
+  _correctCount: number,
+  _speedBonus: number
 ): Promise<{ success: boolean; is_new_record: boolean; best_score: number }> {
-  const username = await getUsername();
-  if (!username) throw new Error('Kullanıcı adı bulunamadı');
-  
-  // Try new endpoint first
-  let response = await fetch(`${API_URL}/api/score/episode`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      player_name: username,
-      episode_id: episodeId,
-      score,
-      correct_count: correctCount,
-      speed_bonus: speedBonus
-    })
-  });
-  
-  // Fallback to old leaderboard endpoint if new one doesn't exist
-  if (!response.ok && response.status === 404) {
-    console.log('[API] Trying legacy leaderboard endpoint...');
-    response = await fetch(`${API_URL}/api/leaderboard/${episodeId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: username,
-        score,
-        correct_count: correctCount,
-        speed_bonus: speedBonus,
-        episode_id: episodeId
-      })
-    });
-  }
-  
-  if (!response.ok) {
-    console.warn('[API] Score submission failed, returning local data');
-    // Return local success even if API fails
-    return { success: true, is_new_record: false, best_score: score };
-  }
-  
-  try {
-    return await response.json();
-  } catch {
-    return { success: true, is_new_record: false, best_score: score };
-  }
+  console.log('[API] Saving episode score locally:', { episodeId, score });
+  const result = await saveLocalEpisodeBestScore(episodeId, score);
+  return { success: true, ...result };
 }
 
 export async function submitMixedScore(
   score: number,
-  correctCount: number,
-  speedBonus: number,
-  questionsAnswered: number
+  _correctCount: number,
+  _speedBonus: number,
+  _questionsAnswered: number
 ): Promise<{ success: boolean; is_new_record: boolean; best_score: number }> {
-  const username = await getUsername();
-  if (!username) throw new Error('Kullanıcı adı bulunamadı');
-  
-  // Try new endpoint first
-  let response = await fetch(`${API_URL}/api/score/mixed`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      player_name: username,
-      score,
-      correct_count: correctCount,
-      speed_bonus: speedBonus,
-      questions_answered: questionsAnswered
-    })
-  });
-  
-  // Fallback to old mixed leaderboard endpoint if new one doesn't exist
-  if (!response.ok && response.status === 404) {
-    console.log('[API] Trying legacy mixed leaderboard endpoint...');
-    response = await fetch(`${API_URL}/api/leaderboard/mixed`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: username,
-        score,
-        correct_count: correctCount,
-        speed_bonus: speedBonus,
-        questions_answered: questionsAnswered
-      })
-    });
-  }
-  
-  if (!response.ok) {
-    console.warn('[API] Mixed score submission failed, returning local data');
-    // Return local success even if API fails
-    return { success: true, is_new_record: false, best_score: score };
-  }
-  
-  try {
-    return await response.json();
-  } catch {
-    return { success: true, is_new_record: false, best_score: score };
-  }
+  console.log('[API] Saving mixed score locally:', { score });
+  const result = await saveLocalMixedBestScore(score);
+  return { success: true, ...result };
 }
 
-export async function getGeneralLeaderboard(): Promise<LeaderboardResponse> {
-  const username = await getUsername();
-  
-  // Try new endpoint first
-  let url = `${API_URL}/api/leaderboard/general`;
-  if (username) url += `?player_name=${encodeURIComponent(username)}`;
-  
-  let response = await fetch(url);
-  
-  // If new endpoint works, return the data
-  if (response.ok) {
-    return response.json();
-  }
-  
-  // Fallback: Old API doesn't have general leaderboard, aggregate from episode 1
-  console.log('[API] General leaderboard not found, using episode 1 fallback');
-  try {
-    const episodeData = await getEpisodeLeaderboard(1);
-    return episodeData;
-  } catch {
-    return { entries: [], player_rank: null, player_score: null, total_players: 0 };
-  }
-}
+// === PLAYER STATS (Local) ===
 
-export async function getEpisodeLeaderboard(episodeId: number): Promise<LeaderboardResponse> {
-  const username = await getUsername();
-  
-  // Try new endpoint first
-  let url = `${API_URL}/api/leaderboard/episode/${episodeId}`;
-  if (username) url += `?player_name=${encodeURIComponent(username)}`;
-  
-  let response = await fetch(url);
-  
-  if (response.ok) {
-    return response.json();
-  }
-  
-  // Fallback to old endpoint format: /api/leaderboard/{episode_id}
-  console.log('[API] Trying legacy episode leaderboard endpoint...');
-  url = `${API_URL}/api/leaderboard/${episodeId}`;
-  if (username) url += `?player_name=${encodeURIComponent(username)}`;
-  
-  response = await fetch(url);
-  
-  if (!response.ok) {
-    console.warn('[API] Leaderboard fetch failed');
-    return { entries: [], player_rank: null, player_score: null, total_players: 0 };
-  }
-  
-  // Transform old format to new format
-  const oldData = await response.json();
-  const entries = (oldData.top_10 || []).map((entry: any, index: number) => ({
-    rank: entry.rank || index + 1,
-    player_name: entry.player_name || 'Anonim',
-    score: Math.round(entry.score || 0),
-  }));
-  
-  return {
-    entries,
-    player_rank: oldData.player_rank || null,
-    player_score: oldData.player_entry?.score ? Math.round(oldData.player_entry.score) : null,
-    total_players: entries.length,
-  };
-}
-
-export async function getMixedLeaderboard(): Promise<LeaderboardResponse> {
-  const username = await getUsername();
-  
-  // Try new endpoint first
-  let url = `${API_URL}/api/leaderboard/mixed`;
-  if (username) url += `?player_name=${encodeURIComponent(username)}`;
-  
-  let response = await fetch(url);
-  
-  if (response.ok) {
-    return response.json();
-  }
-  
-  // Fallback: Old API doesn't have mixed leaderboard
-  console.log('[API] Mixed leaderboard not found, returning empty');
-  return { entries: [], player_rank: null, player_score: null, total_players: 0 };
+export interface PlayerStats {
+  player_name: string;
+  global_score: number;
+  episodes_completed: number;
+  episode_scores: Record<number, number>;
+  mixed_best_score: number;
 }
 
 export async function getPlayerStats(): Promise<PlayerStats | null> {
   const username = await getUsername();
   if (!username) return null;
   
-  const response = await fetch(`${API_URL}/api/player/${encodeURIComponent(username)}/stats`);
-  if (!response.ok) return null;
-  return response.json();
+  const episodeScores = await getLocalEpisodeScores();
+  const mixedBest = await getLocalMixedBestScore();
+  
+  const globalScore = Object.values(episodeScores).reduce((sum, s) => sum + s, 0) + mixedBest;
+  const episodesCompleted = Object.keys(episodeScores).length;
+  
+  return {
+    player_name: username,
+    global_score: globalScore,
+    episodes_completed: episodesCompleted,
+    episode_scores: episodeScores,
+    mixed_best_score: mixedBest,
+  };
 }

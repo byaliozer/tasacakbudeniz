@@ -62,7 +62,7 @@ index a38ddb7..e69de29 100644
 ---------+import time
 ---------+
 ---------+# Backend URL from frontend/.env
----------+BACKEND_URL = "https://triviawave.preview.emergentagent.com/api"
+---------+BACKEND_URL = "https://quiz-offline-1.preview.emergentagent.com/api"
 ---------+
 ---------+class QuizAPITester:
 ---------+    def __init__(self):

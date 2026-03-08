@@ -5,20 +5,18 @@ import {
   TouchableOpacity,
   StyleSheet,
   FlatList,
-  ActivityIndicator,
   Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { getEpisodes, getPlayerStats, Episode } from '../src/services/api';
+import { getEpisodes, getLocalEpisodeScores, Episode } from '../src/services/api';
 import { BannerAd } from '../src/components/BannerAd';
 
 export default function EpisodesScreen() {
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [episodeScores, setEpisodeScores] = useState<Record<number, number>>({});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -27,25 +25,15 @@ export default function EpisodesScreen() {
 
   const loadData = async () => {
     setLoading(true);
-    setError(false);
     try {
-      const [eps, stats] = await Promise.all([
+      const [eps, scores] = await Promise.all([
         getEpisodes(),
-        getPlayerStats()
+        getLocalEpisodeScores()
       ]);
-      
-      if (eps.length === 0) {
-        setError(true);
-      } else {
-        setEpisodes(eps);
-      }
-      
-      if (stats) {
-        setEpisodeScores(stats.episode_scores || {});
-      }
+      setEpisodes(eps);
+      setEpisodeScores(scores);
     } catch (e) {
       console.error('Error loading episodes:', e);
-      setError(true);
     }
     setLoading(false);
   };
@@ -85,7 +73,7 @@ export default function EpisodesScreen() {
             {item.name}
           </Text>
           <Text style={[styles.episodeQuestions, isLocked && styles.lockedSubtext]}>
-            {isLocked ? 'Yakında' : '25 Soru'}
+            {isLocked ? 'Yakında' : `${item.question_count} Soru`}
           </Text>
         </View>
         {!isLocked && hasScore && (
@@ -114,29 +102,13 @@ export default function EpisodesScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      {loading ? (
-        <View style={styles.loading}>
-          <ActivityIndicator size="large" color="#009688" />
-        </View>
-      ) : error ? (
-        <View style={styles.errorContainer}>
-          <Ionicons name="cloud-offline" size={60} color="#666" />
-          <Text style={styles.errorText}>Bölümler yüklenemedi</Text>
-          <Text style={styles.errorSubtext}>İnternet bağlantınızı kontrol edin</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={loadData}>
-            <Ionicons name="refresh" size={20} color="#fff" />
-            <Text style={styles.retryText}>Tekrar Dene</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <FlatList
-          data={episodes}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={renderEpisode}
-          contentContainerStyle={styles.list}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
+      <FlatList
+        data={episodes}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={renderEpisode}
+        contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
+      />
 
       <BannerAd />
     </SafeAreaView>
@@ -164,11 +136,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#fff',
-  },
-  loading: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   list: {
     padding: 16,
@@ -235,37 +202,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     color: '#ffc107',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  errorText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#fff',
-    marginTop: 16,
-  },
-  errorSubtext: {
-    fontSize: 14,
-    color: '#888',
-    marginTop: 8,
-  },
-  retryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#009688',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginTop: 24,
-    gap: 8,
-  },
-  retryText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
   },
 });

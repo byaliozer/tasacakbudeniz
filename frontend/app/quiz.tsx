@@ -257,8 +257,8 @@ export default function QuizScreen() {
     
     const nextIdx = currentIndex + 1;
     
-    // Episode mode: 25 questions max
-    if (mode === 'episode' && nextIdx >= 25) {
+    // Episode mode: complete when all questions answered
+    if (mode === 'episode' && nextIdx >= quiz.questions.length) {
       endGame();
       return;
     }
@@ -317,7 +317,7 @@ export default function QuizScreen() {
           params: {
             ...baseParams,
             episodeId: episodeId.toString(),
-            totalQuestions: '25',
+            totalQuestions: quiz?.questions.length.toString() || '25',
             isNewRecord: result.is_new_record ? '1' : '0',
             bestScore: result.best_score.toString(),
           },
@@ -340,7 +340,7 @@ export default function QuizScreen() {
           params: {
             ...baseParams,
             episodeId: episodeId.toString(),
-            totalQuestions: '25',
+            totalQuestions: quiz?.questions.length.toString() || '25',
           },
         });
       }
@@ -359,7 +359,7 @@ export default function QuizScreen() {
   }
 
   const currentQuestion = quiz.questions[currentIndex];
-  const totalQuestions = mode === 'episode' ? 25 : quiz.questions.length;
+  const totalQuestions = quiz.questions.length;
   const isSpeedBonusActive = timer > 15;
   const timerDanger = timer <= 5;
 

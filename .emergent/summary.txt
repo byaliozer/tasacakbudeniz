@@ -1,112 +1,106 @@
 <analysis>
-**original_problem_statement**: The user is developing an interactive quiz mobile application, Taşacak Bu Deniz. After initial development and bug fixes, the user is now preparing the application for both Google Play and Apple App Store release. Key recent requests include fixing critical bugs related to scoring and leaderboards, resolving build and deployment issues for Android (AAB), preparing the app for iOS submission (including adding a guest login), and implementing a full suite of AdMob advertisements (banner, interstitial, rewarded).
+**original_problem_statement**: The user is developing an interactive quiz mobile application, Taşacak Bu Deniz. The initial goal was to prepare the app for release, which involved adding iOS AdMob IDs and resolving build issues. However, the project was plagued by a persistent and critical issue where the application could not connect to the backend server when using mobile data, despite working on WiFi. After numerous attempts to fix the issue by changing deployment URLs, updating configurations, and modifying networking code, the user has decided to pivot the architecture.
+
+The new core requirement is to make the application work **offline** by embedding all quiz questions and episode data directly into the app, removing the dependency on the unreliable backend server. The user will provide an XLSX file containing all the data, which needs to be parsed and integrated into the application's source code.
 
 **PRODUCT REQUIREMENTS**:
-- **Game Modes**: Episode Mode (per-episode high scores) and Mixed Mode (endless, single best score).
-- **Scoring**: A  is the sum of all best episode scores. Mixed mode has its own separate best score.
-- **Leaderboards**: A 3-tab screen for General, Episode, and Mixed Mode leaderboards.
-- **Dynamic Content**: All episodes and questions are loaded dynamically from a Google Sheet. The app must automatically adapt to new episodes being added without requiring a code change.
+- **Game Modes**: Episode Mode and Mixed Mode.
+- **Scoring & Leaderboards**: *(Note: With the move to an offline model, server-side leaderboards will no longer function. This needs to be addressed with the user).*
+- **Dynamic Content**: The app will no longer be dynamic. New episodes will be added by the user providing a new XLSX file, which will require a new app build and update.
 - **Monetization**:
-  - Banner ads on most screens, including the quiz screen.
-  - Interstitial ads on game over and when navigating to the settings screen.
-  - A rewarded (3X) ad on the result screen to triple the player's score for that run.
-- **Build & Deployment**:
-  - The application must be deployable to a stable, 24/7 backend.
-  - It must produce a signed AAB file for Google Play.
-  - It must be configurable for an iOS build for the App Store.
-- **UX for App Store Review**:
-  - Add a Guest Login option to satisfy Apple's requirement for functionality without mandatory sign-up.
+  - Banner ads on most screens.
+  - Interstitial ads on game over, and when navigating to Settings and Leaderboards.
+  - A rewarded (3X) ad on the result screen.
+- **Build & Deployment**: The application must produce a signed AAB file for Google Play. iOS development has been deprioritized by the user.
 
 **User's preferred language**: Türkçe
 
 **what currently exists?**
-A full-stack application with a FastAPI backend and an Expo (React Native) frontend. The backend is deployed to a stable production URL and dynamically loads content from Google Sheets. The frontend has been significantly improved to fix critical bugs, support the production backend, and add new features like rewarded ads and guest login. The Android build process for generating a signed AAB has been resolved. The project is now at a stage where it's being prepared for an initial iOS build.
+A full-stack application with a FastAPI backend and an Expo (React Native) frontend. The core gameplay loop is non-functional for users on mobile data due to an unresolvable network/DNS issue with the deployed backend URLs (). The user has provided an XLSX file with all the quiz data and has requested a pivot to an offline-first architecture where this data is embedded directly in the app.
 
 **Last working item**:
--   **Last item agent was working**: The user requested the addition of iOS-specific AdMob ad unit IDs to ensure advertisements work on Apple devices. The agent acknowledged the request and was about to start the implementation.
--   **Status**: NOT STARTED
--   **Agent Testing Done**: N
--   **Which testing method agent to use?** After implementation, a new iOS build () needs to be created using **EAS Build** and tested on a physical device or simulator.
--   **User Testing Done**: N
+- **Last item agent was working**: The user has just proposed the architectural shift to an offline-first model and has uploaded an XLSX file () containing all the episode and question data. The agent acknowledged this new direction and was about to begin analyzing the provided Excel file to start the implementation.
+- **Status**: NOT STARTED
+- **Agent Testing Done**: N
+- **Which testing method agent to use?** After implementation, a new Android build (AAB) must be created using **EAS Build**. Manual testing by the user on a physical device, specifically on mobile data and in airplane mode, will be required to confirm the offline functionality.
+- **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
--   **Issue 1: (P1) Banner ad shows no fill error on native build.**
-    -   **Description**: The user reported seeing a [googleMobileAds/error-code-no-fill] error message where the banner ad should be.
-    -   **Attempted fixes**: The agent updated  to hide this specific error message from the user, as it's an ad inventory issue from AdMob, not a code bug. This fix has not been verified in a new build.
-    -   **Next debug checklist**:
-        1.  Build a new APK/AAB.
-        2.  Verify that the space for the banner ad is now blank instead of showing the error text.
-        3.  Confirm with the user that this is the desired behavior when no ad is available.
-    -   **Why fix this issue and what will be achieved with the fix?**: Improves user experience by hiding technical error messages.
-    -   **Status**: USER VERIFICATION PENDING
-    -   **Is recurring issue?** Y
-    -   **Should Test frontend/backend/both after fix?** Frontend (via new APK/AAB).
-    -   **Blocked on other issue**: None
+- **Issue 1: (P0) Application is unusable on mobile data due to backend connectivity failure.**
+    - **Description**: The app fails to fetch data from any of the deployed  URLs when on a mobile network, though it sometimes works on WiFi. This has been a persistent, recurring issue through many builds and deployment attempts.
+    - **Attempted fixes**: Numerous fixes were attempted, including hardcoding URLs, implementing retry logic, adding/removing Android permissions, copying configurations from a working project, and redeploying to different URLs. None of these provided a reliable solution.
+    - **Next debug checklist**: This issue is no longer being debugged. The fix is to implement the new offline architecture requested by the user, which will make this issue obsolete.
+    - **Why fix this issue and what will be achieved with the fix?**: The new architecture will make the app functional for all users regardless of their network connection, completely bypassing the server problem.
+    - **Status**: BLOCKED (superseded by the offline task).
+    - **Is recurring issue?** Y
+    - **Should Test frontend/backend/both after fix?**: Frontend (via new AAB).
+    - **Blocked on other issue**: None.
 
 **In progress Task List**:
-None.
+- **Task 1: (P0) Convert App to Offline-First Architecture**
+    - **Description**: Refactor the application to load all quiz and episode data from a local file instead of fetching from the API.
+    - **Where to resume**:
+        1.  Parse the user-provided  file. It has two sheets: Bolumler (Episodes) and Sorular (Questions).
+        2.  Create a new file, likely , to store the parsed data in a TypeScript-friendly format (e.g., an array of episode objects, each containing an array of question objects).
+        3.  Modify the data fetching functions in  (e.g., , , ) to read from the local  file instead of using .
+        4.  Remove any unnecessary networking logic like .
+    - **What will be achieved with this?**: The application will become fully functional without an internet connection (for core gameplay), resolving the critical connectivity bug.
+    - **Status**: IN PROGRESS
+    - **Should Test frontend/backend/both after fix?** Frontend.
+    - **Blocked on something**: No.
 
 **Upcoming and Future Tasks**
 - **Upcoming Tasks**:
-  - **P0: Implement iOS AdMob IDs**:
-    - The user provided iOS-specific ad unit IDs for App ID, Banner, Interstitial, and Rewarded ads.
-    - **Plan**:
-        1.  Update  to include the iOS AdMob App ID under .
-        2.  Modify  to use the correct Interstitial and Rewarded ad unit IDs based on .
-        3.  Modify  to use the correct Banner ad unit ID based on .
-    - **Why?**: This is a critical step for monetizing the app on iOS.
-  - **P1: Finalize iOS Build and Submission**:
-    - After adding the iOS ad IDs, guide the user through the An Expo user account is required to proceed.
-
-Log in to EAS with email or username (exit and run eas login --help to see other login options)
-Input is required, but stdin is not readable. Failed to display prompt: Email or username process.
-    - Remind the user that EAS will handle the creation and management of signing certificates and provisioning profiles by logging into their Apple Developer account.
-  - **P2: Clone Project for New Quiz App**:
-    - The user has expressed a desire to clone this entire project to create a new, separate quiz app for a different TV series (ABİ).
-    - The agent has already provided a detailed prompt for the user to start a new job for this task. This is a future task to be initiated by the user in a new session.
+    - **P1: Address Leaderboard Functionality**: Once the app is offline, the current  functions will fail as they post to the server. Discuss with the user what should happen. Options:
+        - Disable leaderboards entirely.
+        - Implement a local-only, on-device leaderboard.
+    - **P2: Re-implement Notification System (Optional)**: The local notification system was implemented but then completely removed for debugging purposes. After the offline pivot is successful, confirm with the user if they still want this feature. If so, it needs to be re-added carefully.
 - **Future Tasks**:
-    - **Implement Vibration**: The Settings screen has a toggle for Vibration, but the functionality () is not yet implemented in the quiz screen.
-    - **Refine Sound Design**: A full test of all sound effects and their control via the settings toggle is still pending.
+    - **Implement Vibration**: The toggle exists in Settings, but the  calls are not implemented in the quiz screen.
+    - **Clone Project for New App**: The user previously expressed a desire to clone this project for a new quiz app. This is a future task for a new job.
 
 **Completed work in this session**
-- **Production Backend Stability**:
-  - Guided the user to perform a Replace Deployment to update the backend code.
-  - Updated all frontend files (, ) to use the stable production URL (), ensuring the app is no longer dependent on the temporary preview environment and works 24/7.
-- **Dynamic Episode System (Backend Fixes)**:
-  - Removed hardcoded  episode limits in  for both the  and  endpoints. The system is now fully dynamic and will support any number of episodes added to Google Sheets.
-- **Dynamic Episode Count (Frontend)**:
-  - Modified  to dynamically fetch and display the number of available episodes on the main menu (e.g., 15 Bölüm instead of a fixed 14 Bölüm).
-- **Leaderboard Fixes**:
-  - Fixed a critical bug where the leaderboard would not show data for episodes beyond 14. This was a frontend issue in  that was also made dynamic.
-- **Rewarded Ad (3X Score) Logic**:
-  - Implemented the full flow for the 3X rewarded ad in .
-  - Critically, fixed a bug where the tripled score was not being sent back to the backend to update the leaderboard. The new score is now correctly submitted.
-- **Expanded Interstitial Ads**:
-  - Added logic to show an interstitial ad when the user navigates to the Settings screen from the main menu.
-- **Banner Ad in Quiz**:
-  - Added the banner ad component to the bottom of the  screen.
-- **Android AAB Build for Google Play**:
-  - Resolved a complex series of build issues related to signing keys.
-  - Changed the app's package name to .
-  - Guided the user to create a new keystore, upload it to the Expo Dashboard, and associate it with the new package name, enabling successful signed AAB builds.
-- **iOS Preparation**:
-  - Added a Misafir Olarak Devam Et (Guest Login) button to  to comply with Apple's review guidelines.
-  - Configured  with a build profile for iOS.
-- **Version Bumping**:
-  - Incrementally updated the  in  (up to 7, then 8 for iOS) and the visible version string in  as requested by the user for new builds.
+- **Extensive Network Debugging**: A significant amount of time was spent trying to resolve the mobile data connectivity issue. This included:
+    - Verifying and fixing backend deployment issues (,  files).
+    - Bumping app versions and generating numerous test builds (v1.0.9 to v1.0.24).
+    - Hardcoding API URLs to rule out environment variable issues.
+    - Implementing and later removing a  mechanism.
+    - Comparing app configuration (, plugins) with a similar working project.
+    - Isolating and removing the recently-added notification system to rule it out as a cause.
+    - Finally identifying that the  domains were likely blocked by mobile carriers, while  domains were not.
+- **iOS Build Preparation**:
+    - Added iOS-specific AdMob IDs to , , and .
+    - Filled out the  profile in  with the user's Apple Developer credentials.
+- **New Features Implemented**:
+    - Added an interstitial ad trigger when navigating to the Leaderboard screen.
+    - Added an Instagram Follow prompt and button on the main menu.
+- **Bug Fixes & Dependency Management**:
+    - Resolved 
+changed 10 packages, and audited 1059 packages in 4s
+
+188 packages are looking for funding
+  run `npm fund` for details
+
+7 vulnerabilities (1 low, 3 moderate, 3 high)
+
+To address all issues, run:
+  npm audit fix
+
+Run `npm audit` for details. peer dependency conflicts by updating  packages.
 
 **Earlier issues found/mentioned but not fixed**
--   **Issue 1: Vibration feature not implemented.**
-    -   **Debug checklist**:
-        1.  In , import  from .
-        2.  In functions like  and , add .
-        3.  Ensure this is controlled by the vibration setting stored via .
-    -   **Why to solve this issue and what will be achieved with this?**: Fulfills a feature request from the settings screen and improves user feedback.
-    -   **Should Test frontend/backend/both after fix**: Frontend.
-    -   **Is recurring issue?** N
+- **Issue 1: Vibration feature not implemented.**
+    - **Debug checklist**:
+        1. In , import  from .
+        2. In functions like  and , add  guarded by the setting from .
+    - **Why to solve this issue and what will be achieved with this?**: Fulfills a feature shown in the settings screen and improves user feedback.
+    - **Should Test frontend/backend/both after fix**: Frontend.
+    - **Is recurring issue?** N
 
 **Known issue recurrence from previous fork**
-N/A
+- **Issue recurrence**: The backend URL configuration in  and Emergent's System Keys was repeatedly found to be incorrect or reverted, causing multiple failed debugging cycles.
+- **Recurrence count**: 3+
+- **Status**: RESOLVED (by pivoting to an offline architecture, making the URL irrelevant).
 
 **Code Architecture**
 
@@ -115,83 +109,77 @@ N/A
 - **Frontend**: React Native, Expo, Expo Router, TypeScript
 - **Backend**: Python, FastAPI
 - **Database**: MongoDB
-- **Build/Deployment**: EAS Build, EAS Update, Production Deployment on Emergent.
-- **Monetization**:  for Banner, Interstitial, and Rewarded ads.
-- **Platform-specific code**: Using  to determine which ad IDs to use will be the next step.
-- **App Signing**: Understanding and resolving Android Keystore issues for AAB generation.
+- **Architecture Pivot**: Moving from a client-server architecture to an **offline-first** model by embedding data directly in the application bundle. This is the most critical concept for the next agent.
+- **Build/Deployment**: EAS Build for Android.
 
 **key DB schema**
--   **users**: 
--   **episode_scores**: 
--   **mixed_scores**: 
--   **global_scores**: 
+The existing MongoDB schema will become largely irrelevant for core gameplay.
+- **users**: 
+- **episode_scores**: 
+- **mixed_scores**: 
+- **global_scores**: 
 
 **changes in tech stack**
-None.
+A major architectural change is underway, deprecating the use of the FastAPI/MongoDB backend for fetching quiz questions. The app's core logic will now rely on a local data file ().
 
 **All files of reference**
--   : Guest login added.
--   : 3X rewarded ad logic fixed.
--   : Dynamic episode limit implemented.
--   : Hardcoded episode limits removed.
--   : Updated to use the stable production backend URL.
--   :  and  name updated.
--   : Build profiles for Android and iOS updated.
--   : Rewarded ad logic was added; will need modification for iOS IDs.
+- : **CRITICAL INPUT**. The source of truth for all quiz data for the new offline architecture.
+- : **CRITICAL TARGET**. This file must be refactored to serve data from a local source instead of making  calls.
+- : Where notification logic was previously initialized and may need to be again.
 
 **Areas that need refactoring**:
-- The fallback logic in  should be completely removed now that the app points to a single, stable production backend. This would simplify the code significantly.
+- The entire data-fetching layer in  needs to be refactored for the offline model.
+- All code related to submitting scores and viewing leaderboards needs to be re-evaluated and discussed with the user.
 
 **key api endpoints**
--   : Get list of all episodes.
--   : Get questions for an episode.
--   : Submit a score for an episode.
--   : Get the global leaderboard.
--   : Get leaderboard for an episode.
+The following API endpoints will be deprecated by the new architecture:
+- 
+- 
+- 
+The score submission endpoints will also become non-functional:
+- 
+- 
 
 **Critical Info for New Agent**
--   **PRIORITY 1**: The immediate next task is to add the iOS-specific AdMob IDs provided by the user to enable monetization on iOS. This is a prerequisite for the iOS build.
--   **iOS Build Process**: The user wants to create an  file for the App Store. Guide them to use the An Expo user account is required to proceed.
-
-Log in to EAS with email or username (exit and run eas login --help to see other login options)
-Input is required, but stdin is not readable. Failed to display prompt: Email or username command. Remind them that EAS will automatically handle all signing credentials by asking them to log in to their Apple Developer account.
--   **Backend is Stable**: The backend is now on a stable production URL (). There is no longer a discrepancy between local/preview and production APIs. All hardcoded limits have been removed. Future backend changes only require a .
--   **Frontend Changes Require a New Build**: Any changes to the frontend code (like the ad ID implementation) will require the user to build a new AAB (for Android) or IPA (for iOS) to see the changes.
+- **DO NOT ATTEMPT TO FIX THE SERVER CONNECTION.** The user has made a firm decision to move to an offline-first architecture. The long history of network failures is context, not a problem to be solved. Your primary task is to implement this offline model.
+- **The source of truth for quiz data is now the  file.** Your first step is to parse this file and create a local data structure.
+- **Leaderboards are an open question.** The move to offline breaks the current server-based leaderboard. You must discuss with the user how they want to handle this (disable, local-only, etc.).
+- **Backend is irrelevant for now.** Do not spend any time on the  directory or on deployment issues. The goal is to remove the dependency on it.
 
 **documents created in this job**
--   : A new Android Keystore was generated for the user to solve AAB signing issues.
+- User-provided 
+- The agent created and then removed . The final version of the code does not contain it, but it was part of the debugging process.
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User**: I need to build for iOS. Let's add a guest login for Apple review. Also, how does signing work for iOS?
-2.  **User**: Don't forget the iOS AdMob ad IDs. Here they are. (PENDING IMPLEMENTATION)
-3.  **User**: Can you set the version to 1.0.8 and versionCode to 8? (DONE)
-4.  **User**: I found another bug: The leaderboard only shows up to 14 episodes. (FIXED)
-5.  **User**: Will this fix require a new AAB? (ANSWERED: Yes)
-6.  **User**: Ok, how about deploying? (ANSWERED: Not for this specific frontend fix)
-7.  **User**: Set version to 1.0.7 and versionCode to 7. (DONE)
-8.  **User**: Another bug: My score for episode 15 doesn't show up on the episode 15 leaderboard. (FIXED)
-9.  **User**: Is this fix dynamic for all future episodes? (ANSWERED: Yes)
-10. **User**: Tell me exactly what code you changed so I can apply it to my other projects. (DONE)
+1. **User:** The current URL () is now also blocked. We need a different deploy URL. How can I do that? (PENDING)
+2. **Agent:** Explains how to create a new app/deployment in Emergent to get a new URL.
+3. **User:** Invokes deployment agent to check for issues before deploying.
+4. **Agent:** Reports deployment agent findings and makes a minor DB query optimization.
+5. **User:** Asks for a radical change: embed all questions from a Google Sheet directly into the app to make it offline and remove server dependency. Will provide an XLSX file. (CRITICAL PIVOT)
+6. **Agent:** Agrees this is an excellent idea and confirms the plan. Asks the user to upload the XLSX.
+7. **User:** Uploads  and explains its two-sheet structure. (LAST USER ACTION)
+8. **Agent:** Acknowledges receipt of the file and is about to start analyzing it. (LAST AGENT ACTION)
 
 **Project Health Check:**
--   **Broken**: No core features are currently known to be broken. The last critical bugs (leaderboard, scoring, dynamic episodes) have been fixed.
--   **Mocked**: Web ad functionality remains a placeholder. All testing must be done on native builds.
+- **Broken**: The core functionality of playing the quiz is broken for most users due to the unreliable network connection to the backend. This is the reason for the architectural pivot.
+- **Mocked**: N/A.
 
 **3rd Party Integrations**
--   **Google Sheets**: Primary data source for all quiz content.
--   **Google AdMob**: Integrated for monetization (Banner, Interstitial, Rewarded). Requires platform-specific ad unit IDs.
--   **MongoDB**: Database for user and score storage.
+- **Google Sheets**: Was the primary data source. Is being replaced by a static, embedded data file derived from an XLSX export.
+- **Google AdMob**: Integrated for monetization (Banner, Interstitial, Rewarded).
+- **MongoDB**: The backend database. Its role will be significantly diminished or eliminated with the offline pivot.
 
 **Testing status**
--   **Testing agent used after significant changes**: YES (Web screenshot agent was used to verify UI flows).
--   **Troubleshoot agent used after agent stuck in loop**: NO
--   **Test files created**: None.
--   **Known regressions**: None. Major regressions from previous forks (life system, API issues) have been resolved.
+- **Testing agent used after significant changes**: YES (Troubleshoot/Deployment agent was used multiple times to diagnose network and deployment issues).
+- **Troubleshoot agent used after agent stuck in loop**: YES.
+- **Test files created**: None.
+- **Known regressions**: The notification system was implemented and then removed.
 
 **Credentials to test flow:**
-The user was provided with credentials for the  keystore ().
+N/A
 
 **What agent forgot to execute**
-- The vibration feature, though toggled in settings, has not been implemented.
-- The agent was in the middle of implementing the user's last request (adding iOS AdMob IDs) when the session ended. It is the most critical pending task.
+- The vibration feature, requested early on, remains unimplemented.
+- The agent was about to execute the user's latest and most critical request (implementing the offline architecture) when the session ended. This is the top priority for the next agent.
+
 </analysis>

@@ -12,7 +12,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { BannerAd } from '../src/components/BannerAd';
-import { getEpisodes } from '../src/services/api';
+import { getEpisodes, getPlayerStats } from '../src/services/api';
 import { useAds } from '../src/context/AdContext';
 
 const { width } = Dimensions.get('window');
@@ -21,41 +21,43 @@ export default function MainMenu() {
   const router = useRouter();
   const { showInterstitial } = useAds();
   const [openEpisodeCount, setOpenEpisodeCount] = useState<number | null>(null);
+  const [totalScore, setTotalScore] = useState<number>(0);
 
   useEffect(() => {
-    loadEpisodeCount();
+    loadData();
   }, []);
 
-  const loadEpisodeCount = async () => {
+  const loadData = async () => {
     try {
       const episodes = await getEpisodes();
       const openEpisodes = episodes.filter(ep => !ep.is_locked);
       setOpenEpisodeCount(openEpisodes.length);
+
+      const stats = await getPlayerStats();
+      if (stats) {
+        setTotalScore(stats.global_score);
+      }
     } catch (error) {
-      console.error('Error loading episode count:', error);
+      console.error('Error loading data:', error);
     }
   };
 
   const handleSettingsPress = async () => {
-    // Show interstitial ad before going to settings
     await showInterstitial();
     router.push('/settings');
   };
 
-  const handleLeaderboardPress = async () => {
-    // Show interstitial ad before going to leaderboard
+  const handleMyScoresPress = async () => {
     await showInterstitial();
-    router.push('/leaderboard');
+    router.push('/my-scores');
   };
 
   const handleEpisodeModePress = async () => {
-    // Show interstitial ad before going to episodes
     await showInterstitial();
     router.push('/episodes');
   };
 
   const handleMixedModePress = async () => {
-    // Show interstitial ad before going to mixed quiz
     await showInterstitial();
     router.push('/quiz?mode=mixed');
   };
@@ -108,7 +110,7 @@ export default function MainMenu() {
             </View>
             <View style={styles.gameModeTextContainer}>
               <Text style={styles.gameModeTitle}>Karışık Mod</Text>
-              <Text style={styles.gameModeHint}>Sonsuz mod • Tüm sorular</Text>
+              <Text style={styles.gameModeHint}>Sonsuz mod • {openEpisodeCount ? `${openEpisodeCount * 25 - 5}` : '494'} soru</Text>
             </View>
             <Ionicons name="chevron-forward" size={24} color="rgba(255,255,255,0.6)" />
           </TouchableOpacity>
@@ -121,11 +123,11 @@ export default function MainMenu() {
         <View style={styles.utilityContainer}>
           <TouchableOpacity
             style={styles.utilityButton}
-            onPress={handleLeaderboardPress}
+            onPress={handleMyScoresPress}
             activeOpacity={0.7}
           >
-            <Ionicons name="trophy" size={22} color="#ffc107" />
-            <Text style={styles.utilityText}>Liderlik</Text>
+            <Ionicons name="stats-chart" size={22} color="#ffc107" />
+            <Text style={styles.utilityText}>Skorlarım</Text>
           </TouchableOpacity>
 
           <View style={styles.utilityDivider} />

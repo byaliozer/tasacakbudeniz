@@ -86,7 +86,7 @@ function RootLayoutNav() {
       <Stack.Screen name="episodes" />
       <Stack.Screen name="quiz" />
       <Stack.Screen name="result" />
-      <Stack.Screen name="leaderboard" />
+      <Stack.Screen name="my-scores" />
       <Stack.Screen name="settings" />
     </Stack>
   );

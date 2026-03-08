@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   Animated,
-  Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,6 +13,7 @@ import { useAds } from '../src/context/AdContext';
 import { BannerAd } from '../src/components/BannerAd';
 import { submitEpisodeScore, submitMixedScore } from '../src/services/api';
 import { useEffect, useRef } from 'react';
+import { EPISODES } from '../src/data/quizData';
 
 export default function ResultScreen() {
   const params = useLocalSearchParams();
@@ -38,6 +38,10 @@ export default function ResultScreen() {
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const sparkleAnim = useRef(new Animated.Value(0)).current;
   const multiplierAnim = useRef(new Animated.Value(1)).current;
+
+  // Find max episode for "next episode" button
+  const openEpisodes = EPISODES.filter(ep => !ep.isLocked);
+  const maxEpisodeId = openEpisodes.length > 0 ? openEpisodes[openEpisodes.length - 1].id : 20;
 
   useEffect(() => {
     // Show interstitial ad when result screen opens
@@ -79,9 +83,9 @@ export default function ResultScreen() {
         Animated.timing(multiplierAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
       ]).start();
       
-      // Submit the new multiplied score to API
+      // Save the new multiplied score locally
       try {
-        console.log('[Result] Submitting 3X score:', newScore);
+        console.log('[Result] Saving 3X score locally:', newScore);
         let result;
         
         if (mode === 'mixed') {
@@ -90,14 +94,12 @@ export default function ResultScreen() {
           result = await submitEpisodeScore(episodeId, newScore, correctCount, newSpeedBonus);
         }
         
-        console.log('[Result] 3X Score submitted:', result);
+        console.log('[Result] 3X Score saved:', result);
         
-        // Update best score if it's a new record
         if (result.is_new_record) {
           setCurrentBestScore(result.best_score);
           setIsNewRecordAfterMultiply(true);
           
-          // Start sparkle animation for new record
           Animated.loop(
             Animated.sequence([
               Animated.timing(sparkleAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
@@ -106,7 +108,7 @@ export default function ResultScreen() {
           ).start();
         }
       } catch (error) {
-        console.error('[Result] Error submitting 3X score:', error);
+        console.error('[Result] Error saving 3X score:', error);
       }
     });
     
@@ -116,7 +118,7 @@ export default function ResultScreen() {
   };
 
   const handleNextEpisode = () => {
-    if (episodeId < 14) {
+    if (episodeId < maxEpisodeId) {
       router.replace(`/quiz?mode=episode&episode=${episodeId + 1}`);
     } else {
       router.replace('/episodes');
@@ -128,14 +130,6 @@ export default function ResultScreen() {
       router.replace('/quiz?mode=mixed');
     } else {
       router.replace(`/quiz?mode=episode&episode=${episodeId}`);
-    }
-  };
-
-  const handleLeaderboard = () => {
-    if (mode === 'mixed') {
-      router.push('/leaderboard?tab=mixed');
-    } else {
-      router.push(`/leaderboard?tab=episode&episode=${episodeId}`);
     }
   };
 
@@ -214,7 +208,7 @@ export default function ResultScreen() {
 
         {/* Buttons */}
         <View style={styles.buttonsContainer}>
-          {mode === 'episode' && episodeId < 14 && (
+          {mode === 'episode' && episodeId < maxEpisodeId && (
             <TouchableOpacity style={styles.primaryButton} onPress={handleNextEpisode}>
               <Ionicons name="arrow-forward" size={24} color="#fff" />
               <Text style={styles.primaryButtonText}>Sonraki Bölüm</Text>
@@ -224,11 +218,6 @@ export default function ResultScreen() {
           <TouchableOpacity style={styles.secondaryButton} onPress={handlePlayAgain}>
             <Ionicons name="refresh" size={24} color="#fff" />
             <Text style={styles.secondaryButtonText}>Tekrar Oyna</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.secondaryButton} onPress={handleLeaderboard}>
-            <Ionicons name="trophy" size={24} color="#fff" />
-            <Text style={styles.secondaryButtonText}>Liderlik Tablosu</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.outlineButton} onPress={() => router.replace('/')}>
