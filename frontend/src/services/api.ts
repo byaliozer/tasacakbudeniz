@@ -169,7 +169,7 @@ function normalizeQuizResponse(data: any): QuizResponse {
 export async function getEpisodes(): Promise<Episode[]> {
   try {
     console.log('[API] Fetching episodes from:', `${API_URL}/api/episodes`);
-    const response = await fetchWithRetry(`${API_URL}/api/episodes`);
+    const response = await fetch(`${API_URL}/api/episodes`);
     console.log('[API] Episodes response status:', response.status);
     
     if (!response.ok) {
@@ -182,19 +182,18 @@ export async function getEpisodes(): Promise<Episode[]> {
     return data;
   } catch (error: any) {
     console.error('[API] Episodes error:', error.message || error);
-    // Return empty array instead of throwing to prevent crash
     return [];
   }
 }
 
 export async function getEpisodeQuiz(episodeId: number): Promise<QuizResponse> {
   // Try new endpoint first, fallback to old endpoint
-  let response = await fetchWithRetry(`${API_URL}/api/quiz/episode/${episodeId}?count=25`);
+  let response = await fetch(`${API_URL}/api/quiz/episode/${episodeId}?count=25`);
   
   if (!response.ok) {
     // Fallback to old endpoint format
     console.log('[API] Trying fallback endpoint...');
-    response = await fetchWithRetry(`${API_URL}/api/quiz/${episodeId}?count=25`);
+    response = await fetch(`${API_URL}/api/quiz/${episodeId}?count=25`);
   }
   
   if (!response.ok) {
@@ -207,7 +206,7 @@ export async function getEpisodeQuiz(episodeId: number): Promise<QuizResponse> {
 
 export async function getMixedQuiz(): Promise<QuizResponse> {
   // Try new endpoint first
-  let response = await fetchWithRetry(`${API_URL}/api/quiz/mixed`);
+  let response = await fetch(`${API_URL}/api/quiz/mixed`);
   
   if (!response.ok) {
     // Fallback: fetch all episodes and combine questions
