@@ -48,6 +48,18 @@ export default function MainMenu() {
     router.push('/leaderboard');
   };
 
+  const handleEpisodeModePress = async () => {
+    // Show interstitial ad before going to episodes
+    await showInterstitial();
+    router.push('/episodes');
+  };
+
+  const handleMixedModePress = async () => {
+    // Show interstitial ad before going to mixed quiz
+    await showInterstitial();
+    router.push('/quiz?mode=mixed');
+  };
+
   const handleInstagramPress = () => {
     Linking.openURL('https://www.instagram.com/buse.game');
   };
