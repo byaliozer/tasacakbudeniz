@@ -6,7 +6,8 @@ import { AdProvider } from '../src/context/AdContext';
 import { View, ActivityIndicator, StyleSheet, Platform } from 'react-native';
 import { hasUsername } from '../src/services/api';
 import { useFocusEffect } from '@react-navigation/native';
-import { scheduleNotifications } from '../src/services/notifications';
+// TEMPORARILY DISABLED - Testing if notifications cause network issues
+// import { scheduleNotifications } from '../src/services/notifications';
 
 function RootLayoutNav() {
   const [isLoading, setIsLoading] = useState(true);
