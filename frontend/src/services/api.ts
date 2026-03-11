@@ -135,19 +135,35 @@ async function saveLocalMixedBestScore(score: number): Promise<{ is_new_record: 
   };
 }
 
-// === HELPER: Convert local question format to game format ===
+// === HELPER: Convert local question format to game format with shuffled options ===
 
 function convertQuestion(q: LocalQuestion): Question {
+  // Create options with their original IDs for tracking
+  const originalOptions = [
+    { originalId: 'A', text: q.A },
+    { originalId: 'B', text: q.B },
+    { originalId: 'C', text: q.C },
+    { originalId: 'D', text: q.D },
+  ];
+
+  // Shuffle options randomly
+  const shuffled = shuffleArray(originalOptions);
+
+  // Assign new position IDs (A, B, C, D) and find new correct answer position
+  const positionIds = ['A', 'B', 'C', 'D'];
+  let newCorrect = 'A';
+  const options = shuffled.map((opt, idx) => {
+    if (opt.originalId === q.correct) {
+      newCorrect = positionIds[idx];
+    }
+    return { id: positionIds[idx], text: opt.text };
+  });
+
   return {
     id: q.id,
     text: q.text,
-    options: [
-      { id: 'A', text: q.A },
-      { id: 'B', text: q.B },
-      { id: 'C', text: q.C },
-      { id: 'D', text: q.D },
-    ],
-    correct_option: q.correct,
+    options,
+    correct_option: newCorrect,
     difficulty: q.difficulty,
     points: q.points,
   };
@@ -185,7 +201,9 @@ export async function getEpisodeQuiz(episodeId: number): Promise<QuizResponse> {
   }
   
   const episode = EPISODES.find(ep => ep.id === episodeId);
-  const questions = localQuestions.map(convertQuestion);
+  // Shuffle question order so they appear in random order each time
+  const shuffledQuestions = shuffleArray(localQuestions);
+  const questions = shuffledQuestions.map(convertQuestion);
   
   return {
     episode_id: episodeId,
