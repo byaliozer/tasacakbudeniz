@@ -1,5 +1,5 @@
 // Auto-generated quiz data from TASACAK_21bolumhepsi.xlsx
-// Total: 21 episodes, 494 questions
+// Total: 21 episodes, 519 questions
 
 export interface LocalEpisode {
   id: number;
@@ -42,7 +42,7 @@ export const EPISODES: LocalEpisode[] = [
   { id: 18, name: '18. Bölüm', isLocked: false, description: 'Hemen Çöz', questionCount: 25 },
   { id: 19, name: '19. Bölüm', isLocked: false, description: 'Hemen Çöz', questionCount: 25 },
   { id: 20, name: '20. Bölüm', isLocked: false, description: 'Hemen Çöz', questionCount: 25 },
-  { id: 21, name: '21. Bölüm', isLocked: true, description: 'Yakında', questionCount: 0 },
+  { id: 21, name: '21. Bölüm', isLocked: false, description: 'Hemen Çöz', questionCount: 25 },
 ];
 
 export const QUESTIONS: Record<number, LocalQuestion[]> = {
@@ -579,6 +579,33 @@ export const QUESTIONS: Record<number, LocalQuestion[]> = {
     { id: 'q20_23', text: 'Şerif Furtuna\'nın hücreye gönderilmesiyle birlikte Fırtına ailesinin yeni "Reis"i kim olmuştur?', A: 'Cihan', B: 'Oruç', C: 'İsmail (Iso)', D: 'Kaya', correct: 'B', difficulty: 'kolay', points: 10 },
     { id: 'q20_24', text: '"Aşk kırılınca parçaları nefret olur" sözünü bu bölümde Eleni kime karşı kullanmıştır?', A: 'Adil\'e', B: 'Oruç\'a', C: 'Şerif\'e', D: 'Esme\'ye', correct: 'B', difficulty: 'orta', points: 20 },
     { id: 'q20_25', text: 'Bölümün final sahnesinde Adil, Esme ve Eleni nerede görülmektedir?', A: 'Karadeniz kıyısında', B: 'Mezarlıkta', C: 'Hastane odasında', D: 'Kendi konaklarında', correct: 'A', difficulty: 'kolay', points: 10 },
+  ],
+  21: [
+    { id: 'q21_1', text: 'Eleni ve Fadime\'nin içinde bulunduğu aracın uçurumdan yuvarlanmasına sebep olan sabotajı kim planlamıştır?', A: 'Genco', B: 'Şerif Furtuna', C: 'Kaya', D: 'Gökhan', correct: 'B', difficulty: 'kolay', points: 10 },
+    { id: 'q21_2', text: 'Kaza sonrası uçurumda mahsur kalan Eleni ve Cihan\'ı halatlarla aşağı inerek kim kurtarmıştır?', A: 'Adil', B: 'Oruç', C: 'Kadir', D: 'Genco', correct: 'B', difficulty: 'orta', points: 20 },
+    { id: 'q21_3', text: 'Esme, 20 yıl önce bebeği Aleyna\'nın öldüğü yalanını ona söyleyen annesi Şükriye\'ye ne demiştir?', A: '"Seni seviyorum"', B: '"Beni 20 yıl bir yalanın içine hapsettin"', C: '"Konağı sana bırakıyorum"', D: '"Mardin\'e git"', correct: 'B', difficulty: 'orta', points: 20 },
+    { id: 'q21_4', text: 'Şerif Furtuna, hastaneden kaçmaya çalışırken hangi kılığa girerek ambulansa binmiştir?', A: 'Doktor kılığına', B: 'Hasta ve görevli kılığına', C: 'Polis kılığına', D: 'Yaşlı adam kılığına', correct: 'B', difficulty: 'zor', points: 50 },
+    { id: 'q21_5', text: 'Şerif\'in kaçtığı ambulansı durdurup onu polislerin kucağına atan kumpası kim kurmuştur?', A: 'Adil ve Esme', B: 'Oruç ve Cihan (Kumpas planı)', C: 'Savcı Feride', D: 'Gökhan', correct: 'B', difficulty: 'zor', points: 50 },
+    { id: 'q21_6', text: 'Adil, Eleni\'nin kendi kızı (Aleyna) olduğunu öğrendikten sonra hastanede ona ne diye hitap etmiştir?', A: 'Eleni', B: 'Kızım / Aleyna', C: 'Doktor Hanım', D: 'Yabancı', correct: 'B', difficulty: 'kolay', points: 10 },
+    { id: 'q21_7', text: 'Oruç, Eleni ile dertleşirken aralarındaki ilişkiyi tanımlamak için hangi ifadeyi kullanmıştır?', A: '"Sevgiliyiz"', B: '"Dava arkadaşıyız"', C: '"Düşmanız"', D: '"Akrabayız"', correct: 'B', difficulty: 'orta', points: 20 },
+    { id: 'q21_8', text: 'Adil, Eleni\'nin tıp kariyerini yaktırdığı için duyduğu pişmanlığı nasıl ifade etmiştir?', A: 'Para vererek', B: '"Kendi kızımın hayatını mı kararttım?" diyerek', C: 'Ağlayarak', D: 'Sürgün vererek', correct: 'B', difficulty: 'orta', points: 20 },
+    { id: 'q21_9', text: 'Şükriye, 20 yıl önce bebekleri değiştirme suçuna kimi alet ettiğini itiraf etmiştir?', A: 'Zarife', B: 'Ebe Sultan (veya hastane görevlisi)', C: 'Hicran', D: 'Şerif', correct: 'B', difficulty: 'zor', points: 50 },
+    { id: 'q21_10', text: 'Şerif Furtuna, cezaevine girerken Esme\'ye son olarak ne diye bağırmıştır?', A: '"Seni bekleyeceğim"', B: '"Beni sen yaktın, gün yüzü görme"', C: '"Affet beni"', D: '"Hoşça kal"', correct: 'B', difficulty: 'orta', points: 20 },
+    { id: 'q21_11', text: 'Eleni, gerçek babasının Adil olduğunu öğrendiğinde yaşadığı kafa karışıklığını kime "Ben kimim?" diyerek sormuştur?', A: 'Esme\'ye', B: 'Oruç\'a', C: 'Cihan\'a', D: 'Kendine', correct: 'B', difficulty: 'orta', points: 20 },
+    { id: 'q21_12', text: 'Kadir, Şerif\'in adamlarını yakaladığında meşhur "Patates" esprisini kime karşı yapmıştır?', A: 'Şerif\'e', B: 'Gökhan\'a', C: 'Genco\'ya', D: 'Necmi\'ye', correct: 'B', difficulty: 'kolay', points: 10 },
+    { id: 'q21_13', text: 'Adil Koçari, dizinin bu bölümünde hangi "Ağalık" kuralını bozarak Eleni\'yi korumaya başlamıştır?', A: 'Silah kullanma', B: '"Düşman evladı" önyargısını (Eleni\'yi kabullenerek)', C: 'Para dağıtma', D: 'Sürgün kararı', correct: 'B', difficulty: 'zor', points: 50 },
+    { id: 'q21_14', text: 'Eleni, NIKO projesi hakkında "Ramazan\'ı hissetmek için ne yaptım?" demiştir?', A: '"Dua ettim"', B: '"Niyet ettim, hepinizi saran o hissi anlamak için"', C: '"Oruç tuttum"', D: '"Yemek yemedim"', correct: 'B', difficulty: 'zor', points: 50 },
+    { id: 'q21_15', text: 'Esme, Adil\'e "Sen affetmemeyi ne sandın?" diye sorduğunda Adil ne cevap vermiştir?', A: '"Ceza"', B: '"Adalet"', C: '"Gurur"', D: '"Sevda"', correct: 'B', difficulty: 'zor', points: 50 },
+    { id: 'q21_16', text: 'Şirin Hanım, torunu Eleni\'nin gerçek kimliğini öğrendikten sonra hastanede ne yapmıştır?', A: 'Ona tokat atmıştır', B: 'Boynuna sarılıp "Kuzum" demiştir', C: 'Kovmuştur', D: 'Tanımamıştır', correct: 'B', difficulty: 'kolay', points: 10 },
+    { id: 'q21_17', text: 'Oruç\'un doktorluk mesleğinden ihraç edilmesi resmiyet kazandığında Adil ona ne teklif etmiştir?', A: 'Para', B: '"Şirketin başına geç, reis ol"', C: 'Yeni bir okul', D: 'Sürgün', correct: 'B', difficulty: 'orta', points: 20 },
+    { id: 'q21_18', text: 'Eleni, kaza yerinde Adil\'in elini tuttuğunda Adil hangi duyguyu hissettiğini söylemiştir?', A: 'Korku', B: '"Beni yakan bir ateş"', C: 'Merhamet', D: 'Öfke', correct: 'B', difficulty: 'zor', points: 50 },
+    { id: 'q21_19', text: 'Şerif Furtuna\'nın hapse girmesiyle birlikte Fırtına ailesinin yönetimini kim devralmıştır?', A: 'Esme', B: 'Oruç', C: 'İsmail (Iso)', D: 'Kaya', correct: 'B', difficulty: 'kolay', points: 10 },
+    { id: 'q21_20', text: 'Eleni\'nin boynundaki Anka kuşu kolyesinin içinde kimlerin fotoğrafı vardır?', A: 'Sadece Boran', B: 'Deniz ve kendisi (veya anne-babası check)', C: 'Sadece Esme', D: 'Sadece Adil', correct: 'B', difficulty: 'zor', points: 50 },
+    { id: 'q21_21', text: 'Adil, Esme\'ye karşı duyduğu 20 yıllık öfkeyi "Hangi vasiyet" ile dindirmeye çalışmıştır?', A: 'Boran\'ın vasiyeti', B: 'Kendi vicdanı ve kızına olan bağı', C: 'Şerif\'in son sözü', D: 'Annesinin duası', correct: 'B', difficulty: 'orta', points: 20 },
+    { id: 'q21_22', text: 'Bölümün sonunda Adil, Esme ve Eleni\'yi yan yana gördüğünde hangi eylemi yapmıştır?', A: 'Silah çekmiştir', B: 'Üçü birlikte Karadeniz\'e bakmışlardır (Sessiz mutabakat)', C: 'Kavga etmiştir', D: 'Kaçmıştır', correct: 'B', difficulty: 'orta', points: 20 },
+    { id: 'q21_23', text: 'Elve (İlve), kaza sonrası kurtarılan Atakan için kime teşekkür etmiştir?', A: 'Şerif\'e', B: 'Adil\'e (kumpasın çözülmesindeki rolü için)', C: 'Oruç\'a', D: 'Cihan\'a', correct: 'B', difficulty: 'zor', points: 50 },
+    { id: 'q21_24', text: '"Taşacak Bu Deniz" isminin bu bölümdeki anlamı neye bağlanmıştır?', A: 'Gerçek bir sele', B: 'Sabrın ve sırların artık taşmasına', C: 'Kan davasına', D: 'Gözyaşına', correct: 'B', difficulty: 'orta', points: 20 },
+    { id: 'q21_25', text: 'Final sahnesinde Oruç, Eleni\'ye veda ederken ona ne sözü vermiştir?', A: '"Seni unutacağım"', B: '"Seni hep uzaktan, incitmeden seveceğim"', C: '"Evleneceğiz"', D: '"Hemen döneceğim"', correct: 'B', difficulty: 'orta', points: 20 },
   ],
 };
 
