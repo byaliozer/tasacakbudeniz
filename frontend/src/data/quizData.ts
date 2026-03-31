@@ -1,5 +1,5 @@
 // Auto-generated quiz data from TASACAK_21bolumhepsi.xlsx
-// Total: 21 episodes, 519 questions
+// Total: 22 episodes, 544 questions
 
 export interface LocalEpisode {
   id: number;
@@ -43,6 +43,7 @@ export const EPISODES: LocalEpisode[] = [
   { id: 19, name: '19. Bölüm', isLocked: false, description: 'Hemen Çöz', questionCount: 25 },
   { id: 20, name: '20. Bölüm', isLocked: false, description: 'Hemen Çöz', questionCount: 25 },
   { id: 21, name: '21. Bölüm', isLocked: false, description: 'Hemen Çöz', questionCount: 25 },
+  { id: 22, name: '22. Bölüm', isLocked: false, description: 'Hemen Çöz', questionCount: 25 },
 ];
 
 export const QUESTIONS: Record<number, LocalQuestion[]> = {
@@ -606,6 +607,33 @@ export const QUESTIONS: Record<number, LocalQuestion[]> = {
     { id: 'q21_23', text: 'Elve (İlve), kaza sonrası kurtarılan Atakan için kime teşekkür etmiştir?', A: 'Şerif\'e', B: 'Adil\'e (kumpasın çözülmesindeki rolü için)', C: 'Oruç\'a', D: 'Cihan\'a', correct: 'B', difficulty: 'zor', points: 50 },
     { id: 'q21_24', text: '"Taşacak Bu Deniz" isminin bu bölümdeki anlamı neye bağlanmıştır?', A: 'Gerçek bir sele', B: 'Sabrın ve sırların artık taşmasına', C: 'Kan davasına', D: 'Gözyaşına', correct: 'B', difficulty: 'orta', points: 20 },
     { id: 'q21_25', text: 'Final sahnesinde Oruç, Eleni\'ye veda ederken ona ne sözü vermiştir?', A: '"Seni unutacağım"', B: '"Seni hep uzaktan, incitmeden seveceğim"', C: '"Evleneceğiz"', D: '"Hemen döneceğim"', correct: 'B', difficulty: 'orta', points: 20 },
+  ],
+  22: [
+    { id: 'q22_1', text: 'Gezep, Eleni\'nin Adil ve Esme\'nin kızı olduğunu öğrendiğinde asıl kime "yıllardır bu sırrı sakladıkları" için öfkelenmiştir?', A: 'Şerif ve Kaya', B: 'Esme ve İlve', C: 'Oruç ve Fadime', D: 'İso ve Emine', correct: 'B', difficulty: 'orta', points: 20 },
+    { id: 'q22_2', text: 'Adil, Eyüphan\'ı Koçari\'den kovduktan sonra ceza kesme hakkını kime devrederek köyler arasında huzursuzluğa yol açmıştır?', A: 'Şerif', B: 'Oruç', C: 'İso', D: 'Gezep', correct: 'C', difficulty: 'orta', points: 20 },
+    { id: 'q22_3', text: 'Eyüphan meselesi yüzünden Furtuna köyünde kimin "reisliği" büyük bir isyanla sınanmaya başlamıştır?', A: 'Şerif', B: 'Oruç', C: 'Adil', D: 'Kaya', correct: 'B', difficulty: 'kolay', points: 10 },
+    { id: 'q22_4', text: 'Adil\'in binlerce keçisi köylüler tarafından hangi olay sırasında dağa salınmış ve ağılları boşaltılmıştır?', A: 'Şerif\'in düğününde', B: 'Eyüphan krizi sırasında', C: 'Esme\'nin gidişinde', D: 'Bayram sabahı', correct: 'B', difficulty: 'orta', points: 20 },
+    { id: 'q22_5', text: 'Adil, Esme\'nin geçmişte sahip olabilecekleri hayatın hayallerini kurduğunu ve kime saldırdığını öğrenince büyük bir sarsıntı yaşamıştır?', A: 'Zarife', B: 'Hicran', C: 'Şükriye', D: 'Elve', correct: 'B', difficulty: 'zor', points: 50 },
+    { id: 'q22_6', text: 'Yaralanan Hicran\'a müdahale eden Eleni, ultrasonda ne fark ederek "Hicran beni nasıl doğurdu?" şüphesine kapılmıştır?', A: 'Bir hastalık', B: 'Tıbbi bir imkansızlık / Terslik', C: 'İkiz bebek', D: 'Eski bir yara', correct: 'B', difficulty: 'zor', points: 50 },
+    { id: 'q22_7', text: 'Zarife, Eleni\'nin doğum gerçeğinin peşine düşmesini engellemesi için kimden yardım istemiş ancak reddedilmiştir?', A: 'Şerif', B: 'Oruç', C: 'Adil', D: 'Kaya', correct: 'B', difficulty: 'orta', points: 20 },
+    { id: 'q22_8', text: 'Şerif, Esme\'nin boşanmaktan vazgeçmesi için kime talimat vererek Emine\'nin bebeğini kaçırtmıştır?', A: 'Genco', B: 'Sevcan', C: 'Gökhan', D: 'Kaya', correct: 'B', difficulty: 'orta', points: 20 },
+    { id: 'q22_9', text: 'Sevcan, Emine\'nin bebeğini kaçırmak için Emine\'ye ne yapmıştır?', A: 'Tehdit etmiştir', B: 'İlaç vermiştir', C: 'Evden uzaklaştırmıştır', D: 'Kandırmıştır', correct: 'B', difficulty: 'orta', points: 20 },
+    { id: 'q22_10', text: 'Kaçırılan bebeği kurtarmayı başaran isim kimdir?', A: 'Oruç', B: 'Adil', C: 'İso', D: 'Kaya', correct: 'B', difficulty: 'kolay', points: 10 },
+    { id: 'q22_11', text: 'Bebek kurtarıldığı sırada Emine\'nin durumuyla ilgili yaşanan büyük panik nedir?', A: 'Evden kaçması', B: 'Nabzının durması / Nefes almaması', C: 'Hafızasını kaybetmesi', D: 'Bayılması', correct: 'B', difficulty: 'zor', points: 50 },
+    { id: 'q22_12', text: 'İso\'nun kendisine uzak davranması üzerine panikleyerek onunla duyguları hakkında konuşmaya çalışan karakter kimdir?', A: 'Eleni', B: 'Fadime', C: 'Esme', D: 'Sevcan', correct: 'B', difficulty: 'orta', points: 20 },
+    { id: 'q22_13', text: 'Şirin Furtuna\'nın tüm mal varlığını kime devretmeyi kabul etmesi Şerif\'i çılgına çevirmiştir?', A: 'Kaya', B: 'Oruç', C: 'İso', D: 'Fadime', correct: 'B', difficulty: 'zor', points: 50 },
+    { id: 'q22_14', text: 'Adil, her şeye rağmen Şerif\'ten korumak istediği Esme hakkında nasıl bir karar almıştır?', A: 'Onu hapse attırmak', B: 'Yanından hiç ayırmamak', C: 'Mardin\'e göndermek', D: 'Kovmak', correct: 'B', difficulty: 'kolay', points: 10 },
+    { id: 'q22_15', text: 'Gezep, Eleni\'nin öz ailesini öğrendiğinde Esme ile yaşadığı yüzleşmede Esme ondan ne istemiştir?', A: 'Para', B: 'Zorlu bir görev', C: 'Kaçmasını', D: 'Susmasını', correct: 'B', difficulty: 'zor', points: 50 },
+    { id: 'q22_16', text: 'Şerif, Esme\'nin boşanma kararını durdurmak için asıl kimi kaçırma planı yapmıştır?', A: 'Esme\'yi', B: 'Eleni\'yi', C: 'Zarife\'yi', D: 'Şirin\'i', correct: 'B', difficulty: 'orta', points: 20 },
+    { id: 'q22_17', text: 'Oruç, Furtuna halkının isyanı karşısında kan dökülmesini engellemek için neye odaklanmıştır?', A: 'Kaçmaya', B: 'Barışçıl bir çözüm bulmaya', C: 'Şerif\'i vurmaya', D: 'Köyü terk etmeye', correct: 'B', difficulty: 'kolay', points: 10 },
+    { id: 'q22_18', text: 'Hicran\'ın Eleni hakkındaki hangi hamlesi Esme\'yi büyük bir krizin eşiğine getirmiştir?', A: 'Eleni\'yi yanına almak istemesi', B: 'Eleni\'ye bağırması', C: 'Şerif\'le işbirliği yapması', D: 'Köyden gitmesi', correct: 'A', difficulty: 'zor', points: 50 },
+    { id: 'q22_19', text: 'Eleni ve Oruç arasındaki bağın bu bölümde daha da güçlenmesine sebep olan ortak durum nedir?', A: 'Birlikte kaçmaları', B: 'Zorluklara karşı omuz omuza durmaları', C: 'Nişanlanmaları', D: 'Şirketi kurmaları', correct: 'B', difficulty: 'orta', points: 20 },
+    { id: 'q22_20', text: '"Affet, senden çalınan hayatı unuttuğum için" sözü hangi karaktere aittir?', A: 'Adil', B: 'Gezep (Veya Eleni\'ye hitaben Adil)', C: 'Oruç', D: 'Esme', correct: 'B', difficulty: 'zor', points: 50 },
+    { id: 'q22_21', text: 'Bölümde Adil\'in "Koçari\'de hiçbir ihanet cezasız kalmaz" diyerek hedef aldığı temel olay nedir?', A: 'Keçilerin salınması', B: 'Eyüphan\'ın yaptıkları', C: 'Esme\'nin boşanması', D: 'Şerif\'in tehditleri', correct: 'B', difficulty: 'orta', points: 20 },
+    { id: 'q22_22', text: 'Eleni\'nin Hicran\'ın tıbbi geçmişini araştırması, konaktaki hangi büyük yalanın ortaya çıkma ihtimalini doğurmuştur?', A: 'Hırsızlık', B: 'Eleni\'nin gerçek doğum hikayesi', C: 'Cinayet', D: 'Para kaçırma', correct: 'B', difficulty: 'zor', points: 50 },
+    { id: 'q22_23', text: 'Sevcan\'ın ailesine yeniden ihanet etmesinin arkasındaki asıl itici güç kimdir?', A: 'Kaya', B: 'Şerif', C: 'Adil', D: 'Gezep', correct: 'B', difficulty: 'orta', points: 20 },
+    { id: 'q22_24', text: 'İso ve Fadime\'nin aralarındaki krizin temelinde yatan "yüzleşme" konusu nedir?', A: 'Para', B: 'Derin bir düşmanlığın çocukları olmaları', C: 'Kıskançlık', D: 'Yalanlar', correct: 'B', difficulty: 'zor', points: 50 },
+    { id: 'q22_25', text: 'Bölümün sonunda Emine\'nin hayati riski devam ederken Adil\'in kucağında olan kimdir?', A: 'Esme', B: 'Emine\'nin bebeği', C: 'Eleni', D: 'Fadime', correct: 'B', difficulty: 'kolay', points: 10 },
   ],
 };
 
